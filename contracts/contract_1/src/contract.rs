@@ -4,6 +4,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::state::Action;
 use crate::{execute, instantiate, query};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -25,6 +26,10 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Boilerplate {} => execute::boilerplate(deps, _env, info),
+        ExecuteMsg::Subscribe {
+            commission: String,
+            action: Action,
+        } => execute::subscribe(deps, _env, info),
     }
 }
 
