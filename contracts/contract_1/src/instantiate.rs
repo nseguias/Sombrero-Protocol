@@ -14,12 +14,13 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let cfg = Config {
         contract_owner: info.sender,
+        protocol_fee_bps: msg.protocol_fee_bps,
     };
     CONFIG.save(deps.storage, &cfg)?;
 

@@ -37,7 +37,9 @@ mod tests {
         let code_id = app.store_code(boilerplate_contract());
 
         // instantiate
-        let instantiate_msg = InstantiateMsg {};
+        let instantiate_msg = InstantiateMsg {
+            protocol_fee_bps: 0,
+        };
         let contract_addr = app
             .instantiate_contract(
                 code_id,

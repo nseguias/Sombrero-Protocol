@@ -18,7 +18,9 @@ mod tests {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(OWNER, &[coin(100, DENOM)]);
-        let msg = InstantiateMsg {};
+        let msg = InstantiateMsg {
+            protocol_fee_bps: 0,
+        };
         let res = instantiate(deps.as_mut(), env, info, msg).unwrap();
         assert_eq!(res.attributes.len(), 2);
         assert_eq!(
@@ -32,7 +34,9 @@ mod tests {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(OWNER, &[coin(1_000_000, DENOM)]);
-        let msg = InstantiateMsg {};
+        let msg = InstantiateMsg {
+            protocol_fee_bps: 0,
+        };
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
         let execute_msg = ExecuteMsg::Boilerplate {};

@@ -1,14 +1,23 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use crate::state::Action;
-
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub protocol_fee_bps: u16,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
     Boilerplate {},
-    Subscribe { commission: String, action: Action },
+    UpdateConfig {
+        new_contract_owner: Option<String>,
+        protocol_fee_bps: Option<u16>,
+    },
+    Subscribe {
+        protected_contract: String,
+        beneficiary: String,
+        commission_bps: u16,
+        // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
+    },
 }
 
 #[cw_serde]

@@ -9,29 +9,17 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Too many/little native tokens sent")]
-    TooManyOrLittleNativeTokensSent {},
+    #[error("Beneficiary must be different from the protected contract")]
+    BeneficiaryMustBeDifferentFromProtectedContract {},
 
-    #[error("Wrong denom")]
-    WrongDenom {},
+    #[error("Commission bps must be smaller than or equal to 10,000")]
+    InvalidCommissionBps {},
 
-    #[error("Bid is too low")]
-    BidTooLow {},
+    #[error("Nothing to upgrade")]
+    NothingToUpdate,
 
-    #[error("You are the highest bidder")]
-    YouAreTheHighestBidder {},
-
-    #[error("This bid is closed")]
-    BidClosed {},
-
-    #[error("Cannot retrieve funds while the bid is still open")]
-    BidStillOpen {},
-
-    #[error("There's nothing to retract")]
-    NothingToRetract {},
-
-    #[error("The winner cannot retract bid")]
-    WinnerCannotRetractBid {},
+    #[error("New contract owner must be different from the current contract owner")]
+    NewContractOwnerMustBeDifferent,
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }
