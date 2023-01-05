@@ -18,7 +18,7 @@ pub fn update_config(
     _env: Env,
     info: MessageInfo,
     new_contract_owner: Option<String>,
-    protocol_fee_bps: Option<u16>,
+    new_protocol_fee_bps: Option<u16>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -26,12 +26,12 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    if new_contract_owner.is_none() && protocol_fee_bps.is_none() {
+    if new_contract_owner.is_none() && new_protocol_fee_bps.is_none() {
         return Err(ContractError::NothingToUpdate {});
     }
 
     if new_contract_owner == Some(config.contract_owner.to_string())
-        && protocol_fee_bps == Some(config.protocol_fee_bps)
+        && new_protocol_fee_bps == Some(config.protocol_fee_bps)
     {
         return Err(ContractError::NothingToUpdate {});
     }
@@ -42,7 +42,7 @@ pub fn update_config(
 
     let config = Config {
         contract_owner: val_new_contract_owner?,
-        protocol_fee_bps: protocol_fee_bps.unwrap_or(config.protocol_fee_bps),
+        protocol_fee_bps: new_protocol_fee_bps.unwrap_or(config.protocol_fee_bps),
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -53,15 +53,11 @@ pub fn subscribe(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    protected_contract: String,
     beneficiary: String,
     commission_bps: u16,
 ) -> Result<Response, ContractError> {
-    if beneficiary == protected_contract {
+    if beneficiary == info.sender.to_string() {
         return Err(ContractError::BeneficiaryMustBeDifferentFromProtectedContract {});
-    }
-    if info.sender != protected_contract {
-        return Err(ContractError::Unauthorized {});
     }
     if commission_bps > 10000 {
         return Err(ContractError::InvalidCommissionBps {});
@@ -70,11 +66,49 @@ pub fn subscribe(
         beneficiary: deps.api.addr_validate(&beneficiary)?,
         commission_bps,
     };
-    SUBSCRIPTIONS.save(
-        deps.storage,
-        deps.api.addr_validate(&protected_contract)?,
-        &subscriptions,
-    )?;
+    SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
 
     Ok(Response::new().add_attribute("action", "subscribe"))
+}
+
+pub fn update_subscription(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_beneficiary: Option<String>,
+    new_commission_bps: Option<u16>,
+) -> Result<Response, ContractError> {
+    let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
+
+    if new_beneficiary == Some(info.sender.to_string()) {
+        return Err(ContractError::BeneficiaryMustBeDifferentFromProtectedContract {});
+    }
+    if new_beneficiary.is_none() && new_commission_bps.is_none()
+        || (new_beneficiary == Some(subscriptions.beneficiary.to_string())
+            && new_commission_bps == Some(subscriptions.commission_bps))
+    {
+        return Err(ContractError::NothingToUpdate {});
+    }
+
+    let val_new_beneficiary = deps
+        .api
+        .addr_validate(&new_beneficiary.unwrap_or(subscriptions.beneficiary.to_string()));
+
+    if new_commission_bps > Some(10000) {
+        return Err(ContractError::InvalidCommissionBps {});
+    }
+
+    let subscriptions = Subscriptions {
+        beneficiary: val_new_beneficiary?,
+        commission_bps: new_commission_bps.unwrap_or(subscriptions.commission_bps),
+    };
+    SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
+
+    Ok(Response::new().add_attribute("action", "update_subscription"))
+}
+
+pub fn unsubscribe(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    SUBSCRIPTIONS.remove(deps.storage, info.sender);
+
+    Ok(Response::new().add_attribute("action", "unsubscribe"))
 }

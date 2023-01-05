@@ -10,10 +10,9 @@ pub enum ExecuteMsg {
     Boilerplate {},
     UpdateConfig {
         new_contract_owner: Option<String>,
-        protocol_fee_bps: Option<u16>,
+        new_protocol_fee_bps: Option<u16>,
     },
     Subscribe {
-        protected_contract: String,
         beneficiary: String,
         commission_bps: u16,
         // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%

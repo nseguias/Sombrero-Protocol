@@ -20,6 +20,9 @@ pub enum ContractError {
 
     #[error("New contract owner must be different from the current contract owner")]
     NewContractOwnerMustBeDifferent,
+
+    #[error("Not subscribed")]
+    NotSubscribed {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }

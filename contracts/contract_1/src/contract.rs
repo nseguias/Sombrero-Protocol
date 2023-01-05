@@ -27,20 +27,12 @@ pub fn execute(
         ExecuteMsg::Boilerplate {} => execute::boilerplate(deps, _env, info),
         ExecuteMsg::UpdateConfig {
             new_contract_owner,
-            protocol_fee_bps,
-        } => execute::update_config(deps, _env, info, new_contract_owner, protocol_fee_bps),
+            new_protocol_fee_bps,
+        } => execute::update_config(deps, _env, info, new_contract_owner, new_protocol_fee_bps),
         ExecuteMsg::Subscribe {
-            protected_contract,
             beneficiary,
             commission_bps,
-        } => execute::subscribe(
-            deps,
-            _env,
-            info,
-            protected_contract,
-            beneficiary,
-            commission_bps,
-        ),
+        } => execute::subscribe(deps, _env, info, beneficiary, commission_bps),
     }
 }
 
