@@ -14,7 +14,6 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub struct Subscriptions {
     pub beneficiary: Addr,
     pub commission_bps: u16,
-    pub balance: u128,
 }
 
 #[cw_serde]

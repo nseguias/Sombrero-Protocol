@@ -32,9 +32,8 @@ pub fn execute(
         ExecuteMsg::Subscribe {
             beneficiary,
             commission_bps,
-            balance: u128,
-        } => execute::subscribe(deps, _env, info, beneficiary, commission_bps, balance),
-        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, msg),
+        } => execute::subscribe(deps, _env, info, beneficiary, commission_bps),
+        // ExecuteMsg::Receive(msg) => execute::receive_cw20(deps, env, msg),
     }
 }
 
