@@ -15,7 +15,13 @@ pub enum ExecuteMsg {
     Subscribe {
         beneficiary: String,
         commission_bps: u16,
+        balance: u128,
         // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
+    },
+    Receive {
+        sender: String,
+        amount: u128,
+        msg: String,
     },
 }
 

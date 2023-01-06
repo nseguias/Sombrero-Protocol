@@ -1,4 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use cw20::Cw20ReceiveMsg;
 
 use crate::{
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
@@ -55,6 +56,7 @@ pub fn subscribe(
     info: MessageInfo,
     beneficiary: String,
     commission_bps: u16,
+    balance: u128,
 ) -> Result<Response, ContractError> {
     if beneficiary == info.sender.to_string() {
         return Err(ContractError::BeneficiaryMustBeDifferentFromProtectedContract {});
@@ -65,6 +67,7 @@ pub fn subscribe(
     let subscriptions = Subscriptions {
         beneficiary: deps.api.addr_validate(&beneficiary)?,
         commission_bps,
+        balance,
     };
     SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
 
@@ -77,6 +80,7 @@ pub fn update_subscription(
     info: MessageInfo,
     new_beneficiary: Option<String>,
     new_commission_bps: Option<u16>,
+    balance: u128,
 ) -> Result<Response, ContractError> {
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
 
@@ -101,6 +105,7 @@ pub fn update_subscription(
     let subscriptions = Subscriptions {
         beneficiary: val_new_beneficiary?,
         commission_bps: new_commission_bps.unwrap_or(subscriptions.commission_bps),
+        balance: subscriptions.balance,
     };
     SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
 
@@ -112,3 +117,47 @@ pub fn unsubscribe(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
 
     Ok(Response::new().add_attribute("action", "unsubscribe"))
 }
+
+pub fn withdraw(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    amount: Option<u128>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.contract_owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let amount = amount.unwrap_or(0u128);
+
+    Ok(Response::new()
+        .add_attribute("action", "withdraw")
+        .add_attribute("amount", amount.to_string()))
+}
+
+/*
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let sender = addr_validate_to_lower(deps.api, &cw20_msg.sender)?;
+    match from_binary(&cw20_msg.msg)? {
+        Cw20HookMsg::ExecuteSwapOperations {
+            operations,
+            minimum_receive,
+            to,
+            max_spread,
+        } => execute_swap_operations(
+            deps,
+            env,
+            sender,
+            operations,
+            minimum_receive,
+            to,
+            max_spread,
+        ),
+    }
+}
+*/

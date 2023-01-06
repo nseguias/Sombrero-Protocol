@@ -14,6 +14,16 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub struct Subscriptions {
     pub beneficiary: Addr,
     pub commission_bps: u16,
+    pub balance: u128,
+}
+
+#[cw_serde]
+pub struct Hacker {
+    pub balance: u128,
+    pub recipient: Addr,
+    pub give_up_bounty: bool,
+    pub counter_offer: u128,
 }
 
 pub const SUBSCRIPTIONS: Map<Addr, Subscriptions> = Map::new("conditions");
+pub const BALANCES: Map<(Addr, Addr), Hacker> = Map::new("balances");
