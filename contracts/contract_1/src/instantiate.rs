@@ -21,6 +21,7 @@ pub fn instantiate(
     let cfg = Config {
         contract_owner: info.sender,
         protocol_fee_bps: msg.protocol_fee_bps,
+        cw721_code_id: msg.cw721_code_id,
     };
     CONFIG.save(deps.storage, &cfg)?;
 

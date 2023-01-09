@@ -1,8 +1,10 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cw20::Cw20ReceiveMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
     pub protocol_fee_bps: u16,
+    pub cw721_code_id: u64,
 }
 
 #[cw_serde]
@@ -17,11 +19,9 @@ pub enum ExecuteMsg {
         commission_bps: u16,
         // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
     },
-    // Receive {
-    //     sender: String,
-    //     amount: u128,
-    //     msg: String,
-    // },
+    Receive {
+        cw20_msg: Cw20ReceiveMsg,
+    },
 }
 
 #[cw_serde]
@@ -39,5 +39,5 @@ pub enum MigrateMsg {}
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    Deposit {},
+    DepositHackedTokens {},
 }

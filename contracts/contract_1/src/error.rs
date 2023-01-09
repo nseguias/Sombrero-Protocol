@@ -23,6 +23,9 @@ pub enum ContractError {
 
     #[error("Not subscribed")]
     NotSubscribed {},
+
+    #[error("Invalid Cw20HookMsg")]
+    InvalidCw20HookMsg {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }

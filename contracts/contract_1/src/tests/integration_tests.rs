@@ -15,6 +15,7 @@ mod tests {
     }
 
     const DENOM: &str = "denom";
+    pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
 
     #[test]
     fn boilerplate_process() {
@@ -39,6 +40,7 @@ mod tests {
         // instantiate
         let instantiate_msg = InstantiateMsg {
             protocol_fee_bps: 0,
+            cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
         };
         let contract_addr = app
             .instantiate_contract(

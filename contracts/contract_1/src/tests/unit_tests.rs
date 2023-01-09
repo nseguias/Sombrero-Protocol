@@ -12,6 +12,7 @@ mod tests {
     pub const OWNER: &str = "owner";
     pub const USER: &str = "user";
     pub const DENOM: &str = "denom";
+    pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
 
     #[test]
     fn test_instantiate() {
@@ -20,6 +21,7 @@ mod tests {
         let info = mock_info(OWNER, &[coin(100, DENOM)]);
         let msg = InstantiateMsg {
             protocol_fee_bps: 0,
+            cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
         };
         let res = instantiate(deps.as_mut(), env, info, msg).unwrap();
         assert_eq!(res.attributes.len(), 2);
@@ -36,6 +38,7 @@ mod tests {
         let info = mock_info(OWNER, &[coin(1_000_000, DENOM)]);
         let msg = InstantiateMsg {
             protocol_fee_bps: 0,
+            cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
         };
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
