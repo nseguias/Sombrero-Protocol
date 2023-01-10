@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdResult,
-    Storage, SubMsg, WasmMsg,
+    from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Storage, SubMsg, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -22,19 +22,13 @@ pub fn subscribe(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    beneficiary: String,
     commission_bps: u16,
 ) -> Result<Response, ContractError> {
-    if beneficiary == info.sender.to_string() {
-        return Err(ContractError::BeneficiaryMustBeDifferentFromProtectedContract {});
-    }
+    // Protocol owner, DAO or auiting firm can subscribe to the contract
     if commission_bps > 10000 {
         return Err(ContractError::InvalidCommissionBps {});
     }
-    let subscriptions = Subscriptions {
-        beneficiary: deps.api.addr_validate(&beneficiary)?,
-        commission_bps,
-    };
+    let subscriptions = Subscriptions { commission_bps };
     SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
 
     Ok(Response::new().add_attribute("action", "subscribe"))
@@ -51,19 +45,19 @@ pub fn handle_receive_cw20(
     env: Env,
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     match from_binary(&cw20_msg.msg) {
-        Ok(Cw20HookMsg::DepositHackedTokens {}) => deposit_hacked_tokens(deps, env, info, cw20_msg),
-        _ => Err(ContractError::InvalidCw20HookMsg {}),
+        Ok(Cw20HookMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
+        _ => Err(StdError::generic_err("error parsing instantiate reply")),
     }
 }
 
-pub fn deposit_hacked_tokens(
+pub fn deposit_cw20(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender;
 
@@ -87,7 +81,7 @@ pub fn deposit_hacked_tokens(
     // let mint_msg = MintMsg { token_id, owner, token_uri, extension };
 
     Ok(Response::new()
-        .add_attribute("action", "deposit_hacked_tokens")
+        .add_attribute("action", "deposit_cw20")
         // Q: should I use submessage or message?
         .add_submessages(msgs))
 }
@@ -148,31 +142,19 @@ pub fn update_subscription(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    new_beneficiary: Option<String>,
     new_commission_bps: Option<u16>,
 ) -> Result<Response, ContractError> {
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
 
-    if new_beneficiary == Some(info.sender.to_string()) {
-        return Err(ContractError::BeneficiaryMustBeDifferentFromProtectedContract {});
-    }
-    if new_beneficiary.is_none() && new_commission_bps.is_none()
-        || (new_beneficiary == Some(subscriptions.beneficiary.to_string())
-            && new_commission_bps == Some(subscriptions.commission_bps))
-    {
+    if new_commission_bps.is_none() {
         return Err(ContractError::NothingToUpdate {});
     }
-
-    let val_new_beneficiary = deps
-        .api
-        .addr_validate(&new_beneficiary.unwrap_or(subscriptions.beneficiary.to_string()));
 
     if new_commission_bps > Some(10000) {
         return Err(ContractError::InvalidCommissionBps {});
     }
 
     let subscriptions = Subscriptions {
-        beneficiary: val_new_beneficiary?,
         commission_bps: new_commission_bps.unwrap_or(subscriptions.commission_bps),
     };
     SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
@@ -210,8 +192,9 @@ pub fn update_config(
     let config = Config {
         contract_owner: val_new_contract_owner?,
         protocol_fee_bps: new_protocol_fee_bps.unwrap_or(config.protocol_fee_bps),
-        // not sure if this should / can be updated
+        // Q: not sure if this should / can be updated
         cw721_code_id: config.cw721_code_id,
+        cw721_contract_addr: config.cw721_contract_addr,
     };
     CONFIG.save(deps.storage, &config)?;
 

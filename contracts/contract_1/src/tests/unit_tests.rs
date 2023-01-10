@@ -22,6 +22,9 @@ mod tests {
         let msg = InstantiateMsg {
             protocol_fee_bps: 0,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
+            name: "NAME".to_string(),
+            symbol: "SYMBOL".to_string(),
+            minter: "minter".to_string(),
         };
         let res = instantiate(deps.as_mut(), env, info, msg).unwrap();
         assert_eq!(res.attributes.len(), 2);
@@ -39,6 +42,9 @@ mod tests {
         let msg = InstantiateMsg {
             protocol_fee_bps: 0,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
+            name: "NAME".to_string(),
+            symbol: "SYMBOL".to_string(),
+            minter: "minter".to_string(),
         };
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 

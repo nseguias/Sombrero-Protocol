@@ -5,6 +5,9 @@ use cw20::Cw20ReceiveMsg;
 pub struct InstantiateMsg {
     pub protocol_fee_bps: u16,
     pub cw721_code_id: u64,
+    pub name: String,
+    pub symbol: String,
+    pub minter: String,
 }
 
 #[cw_serde]
@@ -15,9 +18,12 @@ pub enum ExecuteMsg {
         new_protocol_fee_bps: Option<u16>,
     },
     Subscribe {
-        beneficiary: String,
         commission_bps: u16,
         // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
+    },
+    DepositCw20 {
+        token_contract: String,
+        amount: String,
     },
     Receive {
         cw20_msg: Cw20ReceiveMsg,
@@ -39,5 +45,5 @@ pub enum MigrateMsg {}
 
 #[cw_serde]
 pub enum Cw20HookMsg {
-    DepositHackedTokens {},
+    DepositCw20 {},
 }

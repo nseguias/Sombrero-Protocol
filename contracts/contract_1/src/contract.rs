@@ -1,12 +1,17 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+};
 
 use crate::error::ContractError;
+use crate::execute::handle_receive_cw20;
+use crate::instantiate::handle_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::{execute, instantiate, query};
 
 pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
+pub const RECEIVE_CW20_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -18,6 +23,7 @@ pub fn instantiate(
     instantiate::instantiate(deps, _env, info, _msg)
 }
 
+// Q: messed up the error types here
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -31,13 +37,25 @@ pub fn execute(
             new_contract_owner,
             new_protocol_fee_bps,
         } => execute::update_config(deps, env, info, new_contract_owner, new_protocol_fee_bps),
-        ExecuteMsg::Subscribe {
-            beneficiary,
-            commission_bps,
-        } => execute::subscribe(deps, env, info, beneficiary, commission_bps),
+        ExecuteMsg::Subscribe { commission_bps } => {
+            execute::subscribe(deps, env, info, commission_bps)
+        }
+        ExecuteMsg::DepositCw20 {
+            amount,
+            token_contract,
+        } => execute::deposit_cw20(deps, env, info, amount),
         ExecuteMsg::Receive { cw20_msg } => execute::handle_receive_cw20(deps, env, info, cw20_msg),
         // we could add NFT functionality with the following line:
         // ExecuteMsg::ReceiveNft { cw721_msg } => execute::handle_receive_nft(deps, env, info, cw721_msg),
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, env: Env, info: MessageInfo, msg: Reply) -> StdResult<Response> {
+    match msg.id {
+        INSTANTIATE_CW721_REPLY_ID => handle_instantiate_reply(deps, msg),
+        RECEIVE_CW20_REPLY_ID => handle_receive_cw20(deps, env, info, msg),
+        id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
     }
 }
 
