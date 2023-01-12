@@ -26,6 +26,15 @@ pub enum ContractError {
 
     #[error("Invalid Cw20HookMsg")]
     InvalidCw20HookMsg {},
+
+    #[error("Error parsing instantiate reply")]
+    ErrorParsingInstantiateReply {},
+
+    #[error("Invalid reply id: {id:?}")]
+    UnknownReplyId { id: u64 },
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+    //
+    #[error("Custom Error val: {val:?}")]
+    CustomError { val: String },
 }

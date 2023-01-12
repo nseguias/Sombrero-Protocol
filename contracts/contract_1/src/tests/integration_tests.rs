@@ -41,9 +41,9 @@ mod tests {
         let instantiate_msg = InstantiateMsg {
             protocol_fee_bps: 0,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
-            name: "NAME".to_string(),
-            symbol: "SYMBOL".to_string(),
-            minter: "minter".to_string(),
+            cw721_name: "NAME".to_string(),
+            cw721_symbol: "SYMBOL".to_string(),
+            cw721_minter: "minter".to_string(),
         };
         let contract_addr = app
             .instantiate_contract(

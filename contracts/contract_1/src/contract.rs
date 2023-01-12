@@ -40,10 +40,6 @@ pub fn execute(
         ExecuteMsg::Subscribe { commission_bps } => {
             execute::subscribe(deps, env, info, commission_bps)
         }
-        ExecuteMsg::DepositCw20 {
-            amount,
-            token_contract,
-        } => execute::deposit_cw20(deps, env, info, amount),
         ExecuteMsg::Receive { cw20_msg } => execute::handle_receive_cw20(deps, env, info, cw20_msg),
         // we could add NFT functionality with the following line:
         // ExecuteMsg::ReceiveNft { cw721_msg } => execute::handle_receive_nft(deps, env, info, cw721_msg),
@@ -51,11 +47,15 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, env: Env, info: MessageInfo, msg: Reply) -> StdResult<Response> {
+pub fn reply(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: Reply,
+) -> Result<Response, ContractError> {
     match msg.id {
         INSTANTIATE_CW721_REPLY_ID => handle_instantiate_reply(deps, msg),
-        RECEIVE_CW20_REPLY_ID => handle_receive_cw20(deps, env, info, msg),
-        id => Err(StdError::generic_err(format!("Unknown reply id: {}", id))),
+        id => Err(ContractError::UnknownReplyId { id }),
     }
 }
 

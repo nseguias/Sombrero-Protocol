@@ -7,7 +7,6 @@ pub struct Config {
     pub contract_owner: Addr,
     pub protocol_fee_bps: u16,
     pub cw721_contract_addr: Addr,
-    pub cw721_code_id: u64,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

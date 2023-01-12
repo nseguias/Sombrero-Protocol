@@ -3,6 +3,9 @@ use cosmwasm_std::{
     StdResult, Storage, SubMsg, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw721_base::ExecuteMsg;
+use cw721_base::Extension;
+use cw721_base::MintMsg;
 
 use crate::{
     msg::Cw20HookMsg,
@@ -45,10 +48,10 @@ pub fn handle_receive_cw20(
     env: Env,
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
-) -> StdResult<Response> {
+) -> Result<Response, ContractError> {
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
-        _ => Err(StdError::generic_err("error parsing instantiate reply")),
+        _ => Err(ContractError::ErrorParsingInstantiateReply {}),
     }
 }
 
@@ -57,7 +60,7 @@ pub fn deposit_cw20(
     env: Env,
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
-) -> StdResult<Response> {
+) -> Result<Response, ContractError> {
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender;
 
@@ -67,16 +70,18 @@ pub fn deposit_cw20(
 
     let bounty = subscriptions.commission_bps as u128 * receive_msg.amount.u128() / 10000;
 
+    // let msg = cw20::Transfer { subscriber, amount - bounty - protocol_fee }
+
     let config = CONFIG.load(deps.storage)?;
 
     let msgs = mint_nft(
         deps.storage,
-        config.cw721_code_id,
         &env.contract.address,
         &env.contract.address,
         bounty,
         hacker_addr,
     )?;
+
     //
     // let mint_msg = MintMsg { token_id, owner, token_uri, extension };
 
@@ -88,34 +93,33 @@ pub fn deposit_cw20(
 
 pub fn mint_nft(
     _storage: &mut dyn Storage,
-    cw721_code_id: u64,
     cw721_contract_addr: &Addr,
     _minter: &Addr,
     bounty: u128,
     hacker_addr: Addr,
 ) -> StdResult<Vec<SubMsg>> {
+    let config = CONFIG.load(_storage)?;
+
     let mut msgs: Vec<SubMsg> = vec![];
+
+    // Q: This T errors out
+    let mint_msg: MintMsg<T> = MintMsg {
+        token_id: "1".to_string(),
+        owner: hacker_addr.to_string(),
+        token_uri: Some("https://example.com".to_string()),
+        extension: None,
+    };
 
     // Q: This should be something like Cw721ExecuteMsg::Mint...
     let cw721_mint_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw721_contract_addr.to_string(),
-        // Q: what would be the CW721 equivalent of Mint?
-        msg: to_binary(&Cw20ExecuteMsg::Mint {
-            recipient: hacker_addr.to_string(),
-            amount: bounty.into(),
-        })?,
+
+        msg: to_binary(&cw721_base::ExecuteMsg::Mint { cw721_mint_msg })?,
         funds: vec![],
     });
 
-    // This T errors out
-    // let mint_msg: MintMsg<T> = MintMsg {
-    //     token_id: "1".to_string(),
-    //     owner: hacker_addr.to_string(),
-    //     token_uri: Some("https://example.com".to_string()),
-    //     extension: None,
-    // };
-
-    msgs.push(SubMsg::reply_on_success(cw721_mint_msg, cw721_code_id));
+    // Q: what should be the id here?
+    msgs.push(SubMsg::reply_on_success(cw721_mint_msg, 1));
 
     Ok(msgs)
 }
@@ -192,8 +196,6 @@ pub fn update_config(
     let config = Config {
         contract_owner: val_new_contract_owner?,
         protocol_fee_bps: new_protocol_fee_bps.unwrap_or(config.protocol_fee_bps),
-        // Q: not sure if this should / can be updated
-        cw721_code_id: config.cw721_code_id,
         cw721_contract_addr: config.cw721_contract_addr,
     };
     CONFIG.save(deps.storage, &config)?;
