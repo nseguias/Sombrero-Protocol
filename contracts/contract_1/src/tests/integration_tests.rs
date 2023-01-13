@@ -43,7 +43,8 @@ mod tests {
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),
-            cw721_minter: "minter".to_string(),
+            cw721_label: "label".to_string(),
+            cw721_admin: Some("contract_address".to_string()),
         };
         let contract_addr = app
             .instantiate_contract(

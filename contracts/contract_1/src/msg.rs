@@ -1,4 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Addr;
 use cw20::Cw20ReceiveMsg;
 
 #[cw_serde]
@@ -7,7 +8,8 @@ pub struct InstantiateMsg {
     pub cw721_code_id: u64,
     pub cw721_name: String,
     pub cw721_symbol: String,
-    pub cw721_minter: String,
+    pub cw721_label: String,
+    pub cw721_admin: Option<String>,
 }
 
 #[cw_serde]
@@ -18,6 +20,7 @@ pub enum ExecuteMsg {
         new_protocol_fee_bps: Option<u16>,
     },
     Subscribe {
+        subscribe_contract: Addr,
         commission_bps: u16,
         // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
     },

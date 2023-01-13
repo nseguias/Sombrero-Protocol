@@ -1,3 +1,4 @@
+use cosmwasm_std::Empty;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult, Storage, SubMsg, WasmMsg,
@@ -26,6 +27,7 @@ pub fn subscribe(
     _env: Env,
     info: MessageInfo,
     commission_bps: u16,
+    subscribe_contract: Addr,
 ) -> Result<Response, ContractError> {
     // Protocol owner, DAO or auiting firm can subscribe to the contract
     if commission_bps > 10000 {
@@ -49,6 +51,12 @@ pub fn handle_receive_cw20(
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
+    // validate that cw20 contract is sending this message
+    let config = CONFIG.load(deps.storage)?;
+    if config.contract_owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
         _ => Err(ContractError::ErrorParsingInstantiateReply {}),
@@ -61,34 +69,56 @@ pub fn deposit_cw20(
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender;
-
-    // TODO: check if enough native tokens are sent to avoid spamming
-
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract)?;
-
     let bounty = subscriptions.commission_bps as u128 * receive_msg.amount.u128() / 10000;
 
-    // let msg = cw20::Transfer { subscriber, amount - bounty - protocol_fee }
+    let mut messages = Vec::new();
+    // transfer bounty to hacker as a message
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: cw20_contract.to_string(),
+        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            recipient: hacker_addr.to_string(),
+            amount: bounty.into(),
+        })?,
+        funds: vec![],
+    }));
+    // transfer remaining funds to suscriber as a message
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: cw20_contract.to_string(),
+        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            recipient: "NEED_TO_FIX".to_string(),
+            amount: (receive_msg.amount.u128() - bounty).into(),
+        })?,
+        funds: vec![],
+    }));
+    // mint nft as a message -> TODO: need to pass extension parameters and make it work
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: cw20_contract.to_string(),
+        msg: to_binary(&MintMsg::<Extension> {
+            token_id: "0".to_string(),
+            owner: hacker_addr.to_string(),
+            token_uri: None,
+            extension: None,
+        })?,
+        funds: vec![],
+    }));
 
-    let config = CONFIG.load(deps.storage)?;
+    // TODO: FIX THIS
+    // let mint_msg = cw721_base::Cw721Contract::<Extension, Empty, Empty, Empty>::mint(
+    //     self, deps, env, info, token_id,
+    // )?;
 
-    let msgs = mint_nft(
-        deps.storage,
-        &env.contract.address,
-        &env.contract.address,
-        bounty,
-        hacker_addr,
-    )?;
-
-    //
-    // let mint_msg = MintMsg { token_id, owner, token_uri, extension };
+    // update bounty balance -> claimed = true or somehting like that
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
         // Q: should I use submessage or message?
-        .add_submessages(msgs))
+        // A: como no necesito callback, mando sub_mensaje para actualizar el state. Si tx falla, se revierte todo.
+        //.add_submessages(msgs))
+        .add_messages(messages))
 }
 
 pub fn mint_nft(
@@ -97,13 +127,13 @@ pub fn mint_nft(
     _minter: &Addr,
     bounty: u128,
     hacker_addr: Addr,
-) -> StdResult<Vec<SubMsg>> {
+) -> StdResult<CosmosMsg> {
     let config = CONFIG.load(_storage)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
 
     // Q: This T errors out
-    let mint_msg: MintMsg<T> = MintMsg {
+    let mint_msg = MintMsg {
         token_id: "1".to_string(),
         owner: hacker_addr.to_string(),
         token_uri: Some("https://example.com".to_string()),
@@ -114,14 +144,16 @@ pub fn mint_nft(
     let cw721_mint_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw721_contract_addr.to_string(),
 
-        msg: to_binary(&cw721_base::ExecuteMsg::Mint { cw721_mint_msg })?,
+        msg: to_binary(&cw721_base::ExecuteMsg::Mint { mint_msg })?,
         funds: vec![],
     });
 
-    // Q: what should be the id here?
-    msgs.push(SubMsg::reply_on_success(cw721_mint_msg, 1));
+    Ok(cw721_mint_msg)
 
-    Ok(msgs)
+    // Q: what should be the id here?
+    //msgs.push(SubMsg::reply_on_success(cw721_mint_msg, 1));
+
+    //Ok(msgs)
 }
 
 pub fn withdraw(

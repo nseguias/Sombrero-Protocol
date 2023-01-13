@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 
 use crate::error::ContractError;
@@ -37,12 +37,11 @@ pub fn execute(
             new_contract_owner,
             new_protocol_fee_bps,
         } => execute::update_config(deps, env, info, new_contract_owner, new_protocol_fee_bps),
-        ExecuteMsg::Subscribe { commission_bps } => {
-            execute::subscribe(deps, env, info, commission_bps)
-        }
+        ExecuteMsg::Subscribe {
+            subscribe_contract,
+            commission_bps,
+        } => execute::subscribe(deps, env, info, commission_bps, subscribe_contract),
         ExecuteMsg::Receive { cw20_msg } => execute::handle_receive_cw20(deps, env, info, cw20_msg),
-        // we could add NFT functionality with the following line:
-        // ExecuteMsg::ReceiveNft { cw721_msg } => execute::handle_receive_nft(deps, env, info, cw721_msg),
     }
 }
 
