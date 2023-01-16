@@ -9,12 +9,6 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_utils::parse_reply_instantiate_data;
 
-// version info for migration info
-const CONTRACT_NAME: &str = "crates.io:boilerplate";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
-
 pub type Extension = Option<Metadata>;
 pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
 
@@ -23,8 +17,11 @@ pub fn instantiate(
     env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
+    contract_name: &str,
+    contract_version: &str,
+    instantiate_cw721_reply_id: u64,
 ) -> Result<Response, ContractError> {
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    set_contract_version(deps.storage, contract_name, contract_version)?;
 
     let cfg = Config {
         contract_owner: deps.api.addr_validate(&env.contract.address.to_string())?,
@@ -45,7 +42,7 @@ pub fn instantiate(
             funds: vec![],
             label: msg.cw721_label.to_string(),
         },
-        INSTANTIATE_CW721_REPLY_ID,
+        instantiate_cw721_reply_id,
     );
 
     Ok(Response::new()

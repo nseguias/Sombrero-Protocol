@@ -9,8 +9,11 @@ use crate::instantiate::handle_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::{execute, instantiate, query};
 
+// version info for migration info
+const CONTRACT_NAME: &str = "crates.io:boilerplate";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
-pub const RECEIVE_CW20_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -19,7 +22,15 @@ pub fn instantiate(
     info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    instantiate::instantiate(deps, _env, info, _msg)
+    instantiate::instantiate(
+        deps,
+        _env,
+        info,
+        _msg,
+        CONTRACT_NAME,
+        CONTRACT_VERSION,
+        INSTANTIATE_CW721_REPLY_ID,
+    )
 }
 
 // Q: messed up the error types here
