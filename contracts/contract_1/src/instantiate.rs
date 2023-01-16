@@ -47,11 +47,9 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
-        //  this should be .add_submessage(instatiate_cw721_msg)) instead
         .add_submessage(message))
 }
 
-// Q: when is this triggered??
 pub fn handle_instantiate_reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     let res = parse_reply_instantiate_data(reply)?;
     let cw721_addr = deps.api.addr_validate(&res.contract_address)?;

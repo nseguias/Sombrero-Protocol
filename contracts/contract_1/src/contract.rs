@@ -9,10 +9,8 @@ use crate::instantiate::handle_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::{execute, instantiate, query};
 
-// version info for migration info
-const CONTRACT_NAME: &str = "crates.io:boilerplate";
+const CONTRACT_NAME: &str = "crates.io:white-hat-hacker";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
 
 #[cfg_attr(not(feature = "library"), entry_point)]

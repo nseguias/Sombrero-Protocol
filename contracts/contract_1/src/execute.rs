@@ -1,3 +1,4 @@
+use cosmwasm_std::Empty;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
@@ -10,6 +11,10 @@ use crate::{
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
     ContractError,
 };
+
+pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+pub type ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
+pub type QueryMsg = cw721_base::QueryMsg<Empty>;
 
 pub fn boilerplate(
     _deps: DepsMut,
@@ -66,16 +71,13 @@ pub fn deposit_cw20(
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let _config = CONFIG.load(deps.storage)?;
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
-    let cw20_contract = info.sender;
+    let cw20_contract = info.sender.clone();
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract.clone())?;
     let bounty = subscriptions.commission_bps as u128 * receive_msg.amount.u128() / 10000;
 
     let mut messages = Vec::new();
-
-    // Whose address is this?
-    let whose_address = env.contract.address;
 
     // transfer bounty to hacker as a message
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -86,8 +88,11 @@ pub fn deposit_cw20(
         })?,
         funds: vec![],
     }));
+
+    // Whose address is this?
+    let whose_address = env.contract.address.clone();
     // transfer remaining funds to suscriber as a message
-    // TODO: check recipient address!
+    // TODO: check recipient address! &
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_contract.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
@@ -97,32 +102,44 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    // let latest_token_id: u64 = deps.querier.query_wasm_smart(
-    //     config.cw721_contract_addr.to_string(),
-    //     &cw721_base::QueryMsg::NumTokens {},
-    // )?;
+    let num_tokens: u64 = from_binary(&Cw721MetadataContract::default().query(
+        deps.as_ref(),
+        env.clone(),
+        QueryMsg::NumTokens {},
+    )?)?;
 
-    // mint nft as a message
-    // TODO: need to pass extension parameters and make it work
-    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.cw721_contract_addr.to_string(),
-        // Q: is this the right way to do it?
-        msg: to_binary(&MintMsg::<Extension> {
-            token_id: "0".to_string(),
+    // can't handle error with ? here -> help: the following other types implement trait `From<T>`:
+    // <error::ContractError as From<ParseReplyError>>
+    // <error::ContractError as From<cosmwasm_std::StdError>>
+    let _result = Cw721MetadataContract::default().execute(
+        deps,
+        env,
+        info,
+        ExecuteMsg::Mint(MintMsg::<Extension> {
+            token_id: (num_tokens + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
             extension: None,
-        })?,
-        funds: vec![],
-    }));
+        }),
+    );
 
-    // update bounty balance -> claimed = true or somehting like that
+    // TODO: mint nft as a message? also need to pass extension parameters and make it work as intended
+    // messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    //     contract_addr: config.cw721_contract_addr.to_string(),
+    //     // Q: is this the right way to do it?
+    //     msg: to_binary(&MintMsg::<Extension> {
+    //         token_id: (num_tokens + 1).to_string(),
+    //         owner: hacker_addr.to_string(),
+    //         token_uri: None,
+    //         extension: None,
+    //     })?,
+    //     funds: vec![],
+    // }));
+
+    // TODO: update bounty balance -> claimed = true or somehting like that
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
-        // Q: should I use submessage or message?
-        // A: como no necesito callback, mando sub_mensaje para actualizar el state. Si tx falla, se revierte todo.
-        //.add_submessages(msgs))
         .add_messages(messages))
 }
 
