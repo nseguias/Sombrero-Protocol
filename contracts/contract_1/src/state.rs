@@ -19,9 +19,28 @@ pub struct Subscriptions {
 #[cw_serde]
 pub struct Hacker {
     pub balance: u128,
-    pub recipient: Addr,
-    pub give_up_bounty: bool,
-    pub counter_offer: u128,
+    pub amount_hacked: u128,
+    pub bounty_received: u128,
+}
+
+#[cw_serde]
+pub struct Trait {
+    pub display_type: Option<String>,
+    pub trait_type: String,
+    pub value: String,
+}
+#[cw_serde]
+#[derive(Default)]
+pub struct Metadata {
+    pub image: Option<String>,
+    pub image_data: Option<String>,
+    pub external_url: Option<String>,
+    pub description: Option<String>,
+    pub name: Option<String>,
+    pub attributes: Option<Vec<Trait>>,
+    pub background_color: Option<String>,
+    pub animation_url: Option<String>,
+    pub youtube_url: Option<String>,
 }
 
 pub const SUBSCRIPTIONS: Map<Addr, Subscriptions> = Map::new("conditions");

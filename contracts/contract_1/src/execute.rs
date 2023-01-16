@@ -1,10 +1,7 @@
-use cosmwasm_std::Empty;
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, Storage, SubMsg, WasmMsg,
+    from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw721_base::ExecuteMsg;
 use cw721_base::Extension;
 use cw721_base::MintMsg;
 
@@ -25,7 +22,7 @@ pub fn boilerplate(
 pub fn subscribe(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     commission_bps: u16,
     subscribe_contract: Addr,
 ) -> Result<Response, ContractError> {
@@ -34,7 +31,7 @@ pub fn subscribe(
         return Err(ContractError::InvalidCommissionBps {});
     }
     let subscriptions = Subscriptions { commission_bps };
-    SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
+    SUBSCRIPTIONS.save(deps.storage, subscribe_contract, &subscriptions)?;
 
     Ok(Response::new().add_attribute("action", "subscribe"))
 }
@@ -72,10 +69,14 @@ pub fn deposit_cw20(
     let config = CONFIG.load(deps.storage)?;
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender;
-    let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract)?;
+    let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract.clone())?;
     let bounty = subscriptions.commission_bps as u128 * receive_msg.amount.u128() / 10000;
 
     let mut messages = Vec::new();
+
+    // Whose address is this?
+    let whose_address = env.contract.address;
+
     // transfer bounty to hacker as a message
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_contract.to_string(),
@@ -86,17 +87,26 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
     // transfer remaining funds to suscriber as a message
+    // TODO: check recipient address!
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_contract.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: "NEED_TO_FIX".to_string(),
+            recipient: whose_address.to_string(),
             amount: (receive_msg.amount.u128() - bounty).into(),
         })?,
         funds: vec![],
     }));
-    // mint nft as a message -> TODO: need to pass extension parameters and make it work
+
+    // let latest_token_id: u64 = deps.querier.query_wasm_smart(
+    //     config.cw721_contract_addr.to_string(),
+    //     &cw721_base::QueryMsg::NumTokens {},
+    // )?;
+
+    // mint nft as a message
+    // TODO: need to pass extension parameters and make it work
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_contract.to_string(),
+        contract_addr: config.cw721_contract_addr.to_string(),
+        // Q: is this the right way to do it?
         msg: to_binary(&MintMsg::<Extension> {
             token_id: "0".to_string(),
             owner: hacker_addr.to_string(),
@@ -106,11 +116,6 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    // TODO: FIX THIS
-    // let mint_msg = cw721_base::Cw721Contract::<Extension, Empty, Empty, Empty>::mint(
-    //     self, deps, env, info, token_id,
-    // )?;
-
     // update bounty balance -> claimed = true or somehting like that
 
     Ok(Response::new()
@@ -119,41 +124,6 @@ pub fn deposit_cw20(
         // A: como no necesito callback, mando sub_mensaje para actualizar el state. Si tx falla, se revierte todo.
         //.add_submessages(msgs))
         .add_messages(messages))
-}
-
-pub fn mint_nft(
-    _storage: &mut dyn Storage,
-    cw721_contract_addr: &Addr,
-    _minter: &Addr,
-    bounty: u128,
-    hacker_addr: Addr,
-) -> StdResult<CosmosMsg> {
-    let config = CONFIG.load(_storage)?;
-
-    let mut msgs: Vec<SubMsg> = vec![];
-
-    // Q: This T errors out
-    let mint_msg = MintMsg {
-        token_id: "1".to_string(),
-        owner: hacker_addr.to_string(),
-        token_uri: Some("https://example.com".to_string()),
-        extension: None,
-    };
-
-    // Q: This should be something like Cw721ExecuteMsg::Mint...
-    let cw721_mint_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw721_contract_addr.to_string(),
-
-        msg: to_binary(&cw721_base::ExecuteMsg::Mint { mint_msg })?,
-        funds: vec![],
-    });
-
-    Ok(cw721_mint_msg)
-
-    // Q: what should be the id here?
-    //msgs.push(SubMsg::reply_on_success(cw721_mint_msg, 1));
-
-    //Ok(msgs)
 }
 
 pub fn withdraw(
