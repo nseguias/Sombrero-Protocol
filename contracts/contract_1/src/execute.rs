@@ -71,7 +71,6 @@ pub fn deposit_cw20(
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let _config = CONFIG.load(deps.storage)?;
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender.clone();
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract.clone())?;
@@ -102,41 +101,21 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    let num_tokens: u64 = from_binary(&Cw721MetadataContract::default().query(
-        deps.as_ref(),
-        env.clone(),
-        QueryMsg::NumTokens {},
-    )?)?;
+    let config = CONFIG.load(deps.storage)?;
+    let num_tokens: u64 = deps
+        .querier
+        .query_wasm_smart(config.cw721_contract_addr, &QueryMsg::NumTokens {})?;
 
-    // can't handle error with ? here -> help: the following other types implement trait `From<T>`:
-    // <error::ContractError as From<ParseReplyError>>
-    // <error::ContractError as From<cosmwasm_std::StdError>>
-    let _result = Cw721MetadataContract::default().execute(
-        deps,
-        env,
-        info,
-        ExecuteMsg::Mint(MintMsg::<Extension> {
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: cw20_contract.to_string(),
+        msg: to_binary(&ExecuteMsg::Mint(MintMsg::<Extension> {
             token_id: (num_tokens + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
             extension: None,
-        }),
-    );
-
-    // TODO: mint nft as a message? also need to pass extension parameters and make it work as intended
-    // messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.cw721_contract_addr.to_string(),
-    //     // Q: is this the right way to do it?
-    //     msg: to_binary(&MintMsg::<Extension> {
-    //         token_id: (num_tokens + 1).to_string(),
-    //         owner: hacker_addr.to_string(),
-    //         token_uri: None,
-    //         extension: None,
-    //     })?,
-    //     funds: vec![],
-    // }));
-
-    // TODO: update bounty balance -> claimed = true or somehting like that
+        }))?,
+        funds: vec![],
+    }));
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
