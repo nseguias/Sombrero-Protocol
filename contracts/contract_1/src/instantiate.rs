@@ -25,7 +25,8 @@ pub fn instantiate(
 
     let cfg = Config {
         contract_owner: deps.api.addr_validate(&env.contract.address.to_string())?,
-        protocol_fee_bps: msg.protocol_fee_bps,
+        bounty_pct: msg.bounty_pct,
+        min_bounty: msg.min_bounty,
         cw721_contract_addr: Addr::unchecked(""),
     };
     CONFIG.save(deps.storage, &cfg)?;

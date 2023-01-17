@@ -9,37 +9,43 @@ mod tests {
     };
 
     // returns an object that can be used with cw-multi-test
-    fn boilerplate_contract() -> Box<dyn Contract<Empty>> {
+    fn hacker_contract() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(execute, instantiate, query);
         Box::new(contract)
     }
 
-    const DENOM: &str = "denom";
+    const DENOM: &str = "uATOM";
     pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
 
     #[test]
     fn boilerplate_process() {
-        let owner = Addr::unchecked("owner");
-        let user = Addr::unchecked("user");
+        let cw20_contract_owner = Addr::unchecked("cw20_contract_owner");
+        let suscriber = Addr::unchecked("suscriber");
+        let hacker = Addr::unchecked("hacker");
 
         // an app object is the blockchain simulator. we send initial balance here too!
         let mut app = App::new(|router, _api, storage| {
             router
                 .bank
-                .init_balance(storage, &owner, coins(2_000_000u128, DENOM))
+                .init_balance(storage, &cw20_contract_owner, coins(1_000_000u128, DENOM))
                 .unwrap();
             router
                 .bank
-                .init_balance(storage, &user, coins(20_000_000u128, DENOM))
+                .init_balance(storage, &suscriber, coins(1_000_000u128, DENOM))
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &hacker, coins(1_000_000u128, DENOM))
                 .unwrap();
         });
 
         // upload the contract to the blockchain and get back code_id to instantiate the contract
-        let code_id = app.store_code(boilerplate_contract());
+        let cw20_code_id = app.store_code(hacker_contract());
 
-        // instantiate
+        // instantiate cw20 contract
         let instantiate_msg = InstantiateMsg {
-            protocol_fee_bps: 0,
+            bounty_pct: 0,
+            min_bounty: None,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),
@@ -48,8 +54,8 @@ mod tests {
         };
         let contract_addr = app
             .instantiate_contract(
-                code_id,
-                owner.clone(),
+                cw20_code_id,
+                cw20_contract_owner.clone(),
                 &instantiate_msg,
                 &coins(2_000_000u128, DENOM),
                 "Boilerplate",
@@ -60,7 +66,7 @@ mod tests {
         // execute
         let execute_msg = ExecuteMsg::Boilerplate {};
         app.execute_contract(
-            user.clone(),
+            suscriber.clone(),
             contract_addr.clone(),
             &execute_msg,
             &coins(15_000_000u128, DENOM),

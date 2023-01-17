@@ -31,7 +31,6 @@ pub fn instantiate(
     )
 }
 
-// Q: messed up the error types here
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -43,8 +42,16 @@ pub fn execute(
         ExecuteMsg::Boilerplate {} => execute::boilerplate(deps, env, info),
         ExecuteMsg::UpdateConfig {
             new_contract_owner,
-            new_protocol_fee_bps,
-        } => execute::update_config(deps, env, info, new_contract_owner, new_protocol_fee_bps),
+            new_bounty_pct,
+            new_min_bounty,
+        } => execute::update_config(
+            deps,
+            env,
+            info,
+            new_contract_owner,
+            new_bounty_pct,
+            new_min_bounty,
+        ),
         ExecuteMsg::Subscribe {
             subscribe_contract,
             commission_bps,

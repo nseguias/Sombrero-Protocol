@@ -169,7 +169,8 @@ pub fn update_config(
     _env: Env,
     info: MessageInfo,
     new_contract_owner: Option<String>,
-    new_protocol_fee_bps: Option<u16>,
+    new_bounty_pct: Option<u16>,
+    new_min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -177,12 +178,16 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    if new_contract_owner.is_none() && new_protocol_fee_bps.is_none() {
+    if new_contract_owner.is_none()
+        && new_bounty_pct.is_none()
+        && new_min_bounty == config.min_bounty
+    {
         return Err(ContractError::NothingToUpdate {});
     }
 
     if new_contract_owner == Some(config.contract_owner.to_string())
-        && new_protocol_fee_bps == Some(config.protocol_fee_bps)
+        && new_bounty_pct == Some(config.bounty_pct)
+        && new_min_bounty == config.min_bounty
     {
         return Err(ContractError::NothingToUpdate {});
     }
@@ -193,7 +198,8 @@ pub fn update_config(
 
     let config = Config {
         contract_owner: val_new_contract_owner?,
-        protocol_fee_bps: new_protocol_fee_bps.unwrap_or(config.protocol_fee_bps),
+        bounty_pct: new_bounty_pct.unwrap_or(config.bounty_pct),
+        min_bounty: new_min_bounty,
         cw721_contract_addr: config.cw721_contract_addr,
     };
     CONFIG.save(deps.storage, &config)?;
