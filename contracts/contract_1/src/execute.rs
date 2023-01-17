@@ -28,15 +28,19 @@ pub fn subscribe(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    commission_bps: u16,
-    subscribe_contract: Addr,
+    subscribed_addr: Addr,
+    bounty_pct: u16,
+    min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     // Protocol owner, DAO or auiting firm can subscribe to the contract
-    if commission_bps > 10000 {
-        return Err(ContractError::InvalidCommissionBps {});
+    if bounty_pct > 100 {
+        return Err(ContractError::InvalidBountyPercentage {});
     }
-    let subscriptions = Subscriptions { commission_bps };
-    SUBSCRIPTIONS.save(deps.storage, subscribe_contract, &subscriptions)?;
+    let subscriptions = Subscriptions {
+        bounty_pct,
+        min_bounty,
+    };
+    SUBSCRIPTIONS.save(deps.storage, subscribed_addr, &subscriptions)?;
 
     Ok(Response::new().add_attribute("action", "subscribe"))
 }
@@ -74,7 +78,7 @@ pub fn deposit_cw20(
     let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
     let cw20_contract = info.sender.clone();
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract.clone())?;
-    let bounty = subscriptions.commission_bps as u128 * receive_msg.amount.u128() / 10000;
+    let bounty = subscriptions.bounty_pct as u128 * receive_msg.amount.u128() / 100;
 
     let mut messages = Vec::new();
 
@@ -144,20 +148,22 @@ pub fn update_subscription(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    new_commission_bps: Option<u16>,
+    new_bounty_pct: Option<u16>,
+    new_min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
 
-    if new_commission_bps.is_none() {
+    if new_bounty_pct.is_none() && new_min_bounty == subscriptions.min_bounty {
         return Err(ContractError::NothingToUpdate {});
     }
 
-    if new_commission_bps > Some(10000) {
-        return Err(ContractError::InvalidCommissionBps {});
+    if new_bounty_pct > Some(100) {
+        return Err(ContractError::InvalidBountyPercentage {});
     }
 
     let subscriptions = Subscriptions {
-        commission_bps: new_commission_bps.unwrap_or(subscriptions.commission_bps),
+        bounty_pct: new_bounty_pct.unwrap_or(subscriptions.bounty_pct),
+        min_bounty: new_min_bounty,
     };
     SUBSCRIPTIONS.save(deps.storage, info.sender, &subscriptions)?;
 
@@ -169,8 +175,7 @@ pub fn update_config(
     _env: Env,
     info: MessageInfo,
     new_contract_owner: Option<String>,
-    new_bounty_pct: Option<u16>,
-    new_min_bounty: Option<u128>,
+    new_protocol_fee: Option<u16>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -178,16 +183,12 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    if new_contract_owner.is_none()
-        && new_bounty_pct.is_none()
-        && new_min_bounty == config.min_bounty
-    {
+    if new_contract_owner.is_none() && new_protocol_fee.is_none() {
         return Err(ContractError::NothingToUpdate {});
     }
 
     if new_contract_owner == Some(config.contract_owner.to_string())
-        && new_bounty_pct == Some(config.bounty_pct)
-        && new_min_bounty == config.min_bounty
+        && new_protocol_fee == Some(config.protocol_fee)
     {
         return Err(ContractError::NothingToUpdate {});
     }
@@ -198,8 +199,7 @@ pub fn update_config(
 
     let config = Config {
         contract_owner: val_new_contract_owner?,
-        bounty_pct: new_bounty_pct.unwrap_or(config.bounty_pct),
-        min_bounty: new_min_bounty,
+        protocol_fee: new_protocol_fee.unwrap_or(config.protocol_fee),
         cw721_contract_addr: config.cw721_contract_addr,
     };
     CONFIG.save(deps.storage, &config)?;

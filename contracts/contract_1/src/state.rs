@@ -5,8 +5,7 @@ use cw_storage_plus::{Item, Map};
 #[cw_serde]
 pub struct Config {
     pub contract_owner: Addr,
-    pub bounty_pct: u16,
-    pub min_bounty: Option<u128>,
+    pub protocol_fee: u16,
     pub cw721_contract_addr: Addr,
 }
 
@@ -14,7 +13,8 @@ pub const CONFIG: Item<Config> = Item::new("config");
 
 #[cw_serde]
 pub struct Subscriptions {
-    pub commission_bps: u16,
+    pub bounty_pct: u16,
+    pub min_bounty: Option<u128>,
 }
 
 #[cw_serde]

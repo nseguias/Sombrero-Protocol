@@ -15,7 +15,7 @@ pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Em
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
     contract_name: &str,
     contract_version: &str,
@@ -24,9 +24,8 @@ pub fn instantiate(
     set_contract_version(deps.storage, contract_name, contract_version)?;
 
     let cfg = Config {
-        contract_owner: deps.api.addr_validate(&env.contract.address.to_string())?,
-        bounty_pct: msg.bounty_pct,
-        min_bounty: msg.min_bounty,
+        contract_owner: deps.api.addr_validate(&info.sender.to_string())?,
+        protocol_fee: msg.protocol_fee,
         cw721_contract_addr: Addr::unchecked(""),
     };
     CONFIG.save(deps.storage, &cfg)?;
@@ -48,6 +47,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_attribute("contract_owner", cfg.contract_owner)
         .add_submessage(message))
 }
 

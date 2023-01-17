@@ -16,8 +16,8 @@ pub enum ContractError {
     #[error("Beneficiary must be different from the protected contract")]
     BeneficiaryMustBeDifferentFromProtectedContract {},
 
-    #[error("Commission bps must be smaller than or equal to 10,000")]
-    InvalidCommissionBps {},
+    #[error("Bounty % must be smaller than or equal to 100%")]
+    InvalidBountyPercentage {},
 
     #[error("Nothing to upgrade")]
     NothingToUpdate,

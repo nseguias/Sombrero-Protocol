@@ -4,7 +4,7 @@ use cw20::Cw20ReceiveMsg;
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub bounty_pct: u16,
+    pub protocol_fee: u16,
     pub min_bounty: Option<u128>,
     pub cw721_code_id: u64,
     pub cw721_name: String,
@@ -19,12 +19,11 @@ pub enum ExecuteMsg {
     UpdateConfig {
         new_contract_owner: Option<String>,
         new_bounty_pct: Option<u16>,
-        new_min_bounty: Option<u128>,
     },
     Subscribe {
-        subscribe_contract: Addr,
-        commission_bps: u16,
-        // A basis point (bps) is one one-hundredth of a percent (0.01%). For example, 100 basis points equal 1%
+        protected_addr: Addr,
+        bounty_pct: u16,
+        min_bounty: Option<u128>,
     },
     Receive {
         cw20_msg: Cw20ReceiveMsg,
@@ -36,10 +35,18 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(BoilerplateResponse)]
     Boilerplate {},
+    #[returns(SubscriberResponse)]
+    Subscriber { protected_addr: String },
 }
 
 #[cw_serde]
 pub struct BoilerplateResponse {}
+
+#[cw_serde]
+pub struct SubscriberResponse {
+    pub bounty_pct: u16,
+    pub min_bounty: Option<u128>,
+}
 
 #[cw_serde]
 pub enum MigrateMsg {}

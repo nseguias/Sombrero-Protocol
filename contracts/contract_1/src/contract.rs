@@ -11,7 +11,7 @@ use crate::{execute, instantiate, query};
 
 const CONTRACT_NAME: &str = "crates.io:white-hat-hacker";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const INSTANTIATE_CW721_REPLY_ID: u64 = 0;
+pub const INSTANTIATE_CW721_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -43,19 +43,12 @@ pub fn execute(
         ExecuteMsg::UpdateConfig {
             new_contract_owner,
             new_bounty_pct,
-            new_min_bounty,
-        } => execute::update_config(
-            deps,
-            env,
-            info,
-            new_contract_owner,
-            new_bounty_pct,
-            new_min_bounty,
-        ),
+        } => execute::update_config(deps, env, info, new_contract_owner, new_bounty_pct),
         ExecuteMsg::Subscribe {
-            subscribe_contract,
-            commission_bps,
-        } => execute::subscribe(deps, env, info, commission_bps, subscribe_contract),
+            protected_addr,
+            bounty_pct,
+            min_bounty,
+        } => execute::subscribe(deps, env, info, protected_addr, bounty_pct, min_bounty),
         ExecuteMsg::Receive { cw20_msg } => execute::handle_receive_cw20(deps, env, info, cw20_msg),
     }
 }
@@ -77,6 +70,9 @@ pub fn reply(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Boilerplate {} => to_binary(&query::boilerplate(deps)?),
+        QueryMsg::Subscriber { protected_addr } => {
+            to_binary(&query::subscriber(deps, protected_addr)?)
+        }
     }
 }
 
