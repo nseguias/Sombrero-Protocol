@@ -1,17 +1,21 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Reply, Response, StdResult,
 };
 
 use crate::error::ContractError;
-use crate::instantiate::handle_instantiate_reply;
+use crate::instantiate::handle_cw721_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::state::Metadata;
 use crate::{execute, instantiate, query};
 
 const CONTRACT_NAME: &str = "crates.io:white-hat-hacker";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const INSTANTIATE_CW721_REPLY_ID: u64 = 1;
+pub const INSTANTIATE_CW721_REPLY_ID: u64 = 2;
+
+pub type Extension = Option<Metadata>;
+pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -57,11 +61,11 @@ pub fn execute(
 pub fn reply(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    // _info: MessageInfo,
     reply: Reply,
 ) -> Result<Response, ContractError> {
     match reply.id {
-        INSTANTIATE_CW721_REPLY_ID => handle_instantiate_reply(deps, reply),
+        INSTANTIATE_CW721_REPLY_ID => handle_cw721_instantiate_reply(deps, reply),
         id => Err(ContractError::UnknownReplyId { id }),
     }
 }
@@ -73,6 +77,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Subscriber { protected_addr } => {
             to_binary(&query::subscriber(deps, protected_addr)?)
         }
+        QueryMsg::Config {} => to_binary(&query::config(deps)?),
     }
 }
 

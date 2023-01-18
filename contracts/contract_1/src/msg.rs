@@ -35,12 +35,21 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(BoilerplateResponse)]
     Boilerplate {},
+    #[returns(ConfigResponse)]
+    Config {},
     #[returns(SubscriberResponse)]
     Subscriber { protected_addr: String },
 }
 
 #[cw_serde]
 pub struct BoilerplateResponse {}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub contract_owner: Addr,
+    pub protocol_fee: u16,
+    pub cw721_contract_addr: Addr,
+}
 
 #[cw_serde]
 pub struct SubscriberResponse {

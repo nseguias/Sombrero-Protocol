@@ -1,6 +1,6 @@
 use cosmwasm_std::{Deps, StdResult};
 
-use crate::msg::{BoilerplateResponse, SubscriberResponse};
+use crate::msg::{BoilerplateResponse, ConfigResponse, SubscriberResponse};
 use crate::state::{CONFIG, SUBSCRIPTIONS};
 
 pub fn boilerplate(deps: Deps) -> StdResult<BoilerplateResponse> {
@@ -16,5 +16,15 @@ pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriberRes
     Ok(SubscriberResponse {
         bounty_pct: subscriptions.bounty_pct,
         min_bounty: subscriptions.min_bounty,
+    })
+}
+
+pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
+    let cfg = CONFIG.load(deps.storage)?;
+
+    Ok(ConfigResponse {
+        contract_owner: cfg.contract_owner,
+        protocol_fee: cfg.protocol_fee,
+        cw721_contract_addr: cfg.cw721_contract_addr,
     })
 }

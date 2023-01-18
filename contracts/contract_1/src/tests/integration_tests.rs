@@ -1,21 +1,32 @@
 #[cfg(test)]
 mod tests {
-    use cosmwasm_std::{coins, Addr, Empty};
-    use cw_multi_test::{App, Contract, ContractWrapper, Executor};
-
     use crate::{
-        contract::{execute, instantiate, query},
-        msg::{BoilerplateResponse, ExecuteMsg, InstantiateMsg, QueryMsg, SubscriberResponse},
+        contract::{
+            execute as hacker_execute, instantiate as hacker_instantiate, query as hacker_query,
+            reply as hacker_reply,
+        },
+        msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, SubscriberResponse},
     };
+    use cosmwasm_std::{coins, Addr, Empty};
+    use cw721_base::entry::execute as cw721_execute;
+    use cw721_base::entry::instantiate as cw721_instantiate;
+    use cw721_base::entry::query as cw721_query;
+    use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 
     // returns an object that can be used with cw-multi-test
     fn hacker_contract() -> Box<dyn Contract<Empty>> {
-        let contract = ContractWrapper::new(execute, instantiate, query);
+        let contract = ContractWrapper::new(hacker_execute, hacker_instantiate, hacker_query)
+            .with_reply(hacker_reply);
+        Box::new(contract)
+    }
+
+    // returns an object that can be used with cw-multi-test
+    fn cw721_contract() -> Box<dyn Contract<Empty>> {
+        let contract = ContractWrapper::new(cw721_execute, cw721_instantiate, cw721_query);
         Box::new(contract)
     }
 
     const DENOM: &str = "uATOM";
-    pub const INSTANTIATE_CW721_REPLY_ID: u64 = 1;
 
     #[test]
     fn hack_process() {
@@ -42,13 +53,13 @@ mod tests {
 
         // upload the contract to the blockchain and get back code_id to instantiate the contract
         let cw20_code_id = app.store_code(hacker_contract());
+        let cw721_code_id = app.store_code(cw721_contract());
 
-        println!("{}", cw20_code_id);
         // instantiate cw20 contract
         let instantiate_msg = InstantiateMsg {
             protocol_fee: 0,
             min_bounty: None,
-            cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
+            cw721_code_id: cw721_code_id,
             cw721_name: "White Hat Hacker NFT".to_string(),
             cw721_symbol: "WHH".to_string(),
             cw721_label: "White Hat Hacker Cw721".to_string(),
@@ -76,16 +87,18 @@ mod tests {
             suscriber.clone(),
             cw20_addr.clone(),
             &execute_msg,
-            &coins(0, DENOM),
+            &coins(10, DENOM),
         )
         .unwrap();
 
         // query
-        let query_msg = QueryMsg::Boilerplate {};
-        let _res: BoilerplateResponse = app
+        let query_msg = QueryMsg::Config {};
+        let config_res: ConfigResponse = app
             .wrap()
             .query_wasm_smart(cw20_addr.clone(), &query_msg)
             .unwrap();
+
+        assert_eq!(config_res.cw721_contract_addr, "contract1");
 
         let query_msg = QueryMsg::Subscriber {
             protected_addr: protected_addr.to_string(),

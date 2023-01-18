@@ -12,9 +12,9 @@ use crate::{
     ContractError,
 };
 
-pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
-pub type ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
-pub type QueryMsg = cw721_base::QueryMsg<Empty>;
+// NOTE: this was ExecuteMsg & QueryMsg before, might have to change it back
+pub type Cw721ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
+pub type Cw721QueryMsg = cw721_base::QueryMsg<Empty>;
 
 pub fn boilerplate(
     _deps: DepsMut,
@@ -108,11 +108,11 @@ pub fn deposit_cw20(
     let config = CONFIG.load(deps.storage)?;
     let num_tokens: u64 = deps
         .querier
-        .query_wasm_smart(config.cw721_contract_addr, &QueryMsg::NumTokens {})?;
+        .query_wasm_smart(config.cw721_contract_addr, &Cw721QueryMsg::NumTokens {})?;
 
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_contract.to_string(),
-        msg: to_binary(&ExecuteMsg::Mint(MintMsg::<Extension> {
+        msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
             token_id: (num_tokens + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,

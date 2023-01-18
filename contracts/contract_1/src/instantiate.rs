@@ -1,6 +1,6 @@
 use crate::{
     msg::InstantiateMsg,
-    state::{Config, Metadata, CONFIG},
+    state::{Config, CONFIG},
     ContractError,
 };
 use cosmwasm_std::{
@@ -9,8 +9,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_utils::parse_reply_instantiate_data;
 
-pub type Extension = Option<Metadata>;
-pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+// NOTE: I had Extension and Cw721MetadataContract defined here but moved them to contract.rs, might have to change it back
 
 pub fn instantiate(
     deps: DepsMut,
@@ -30,15 +29,17 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg)?;
 
+    let cw721_instantiate_msg = cw721_base::msg::InstantiateMsg {
+        name: msg.cw721_name,
+        symbol: msg.cw721_symbol,
+        minter: env.contract.address.to_string(),
+    };
+
     let message = SubMsg::<Empty>::reply_on_success(
         WasmMsg::Instantiate {
             admin: msg.cw721_admin,
             code_id: msg.cw721_code_id,
-            msg: to_binary(&cw721_base::msg::InstantiateMsg {
-                name: msg.cw721_name,
-                symbol: msg.cw721_symbol,
-                minter: env.contract.address.to_string(),
-            })?,
+            msg: to_binary(&cw721_instantiate_msg)?,
             funds: vec![],
             label: msg.cw721_label.to_string(),
         },
@@ -51,7 +52,10 @@ pub fn instantiate(
         .add_submessage(message))
 }
 
-pub fn handle_instantiate_reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+pub fn handle_cw721_instantiate_reply(
+    deps: DepsMut,
+    reply: Reply,
+) -> Result<Response, ContractError> {
     let res = parse_reply_instantiate_data(reply)?;
     let cw721_addr = deps.api.addr_validate(&res.contract_address)?;
 
