@@ -9,6 +9,9 @@ mod tests {
     };
     use cosmwasm_std::{coins, to_binary, Addr, Empty, Uint128};
     use cw20::Cw20ExecuteMsg;
+    use cw20_base::contract::execute as cw20_execute;
+    use cw20_base::contract::instantiate as cw20_instantiate;
+    use cw20_base::contract::query as cw20_query;
     use cw721_base::entry::execute as cw721_execute;
     use cw721_base::entry::instantiate as cw721_instantiate;
     use cw721_base::entry::query as cw721_query;
@@ -27,6 +30,12 @@ mod tests {
         Box::new(contract)
     }
 
+    // returns an object that can be used with cw-multi-test
+    fn cw20_contract() -> Box<dyn Contract<Empty>> {
+        let contract = ContractWrapper::new(cw20_execute, cw20_instantiate, cw20_query);
+        Box::new(contract)
+    }
+
     const DENOM: &str = "uATOM";
 
     #[test]
@@ -35,7 +44,6 @@ mod tests {
         let protected_addr = Addr::unchecked("protected_addr");
         let suscriber = Addr::unchecked("suscriber");
         let hacker = Addr::unchecked("hacker");
-        let cw20_addr = Addr::unchecked("cw20_addr");
 
         // an app object is the blockchain simulator. we send initial balance here too!
         let mut app = App::new(|router, _api, storage| {
@@ -56,8 +64,9 @@ mod tests {
         // upload the contract to the blockchain and get back code_id to instantiate the contract
         let contract_code_id = app.store_code(hacker_contract());
         let cw721_code_id = app.store_code(cw721_contract());
+        let cw20_code_id = app.store_code(cw20_contract());
 
-        // instantiate cw20 contract
+        // instantiate main contract
         let instantiate_msg = InstantiateMsg {
             protocol_fee: 0,
             min_bounty: None,
@@ -67,14 +76,33 @@ mod tests {
             cw721_label: "White Hat Hacker Cw721".to_string(),
             cw721_admin: Some("cw721_contract_owner".to_string()),
         };
-
         let hacker_contract_addr = app
             .instantiate_contract(
                 contract_code_id,
                 contract_owner.clone(),
                 &instantiate_msg,
                 &coins(1_000_000u128, DENOM),
-                "White Hat Hacker Cw20",
+                "White Hat Hacker main contract",
+                None,
+            )
+            .unwrap();
+
+        // instantiate cw20 contract
+        let cw20_instantiate_msg = cw20_base::msg::InstantiateMsg {
+            name: "CW20".to_string(),
+            symbol: "CWT".to_string(),
+            decimals: 6,
+            initial_balances: vec![],
+            mint: None,
+            marketing: None,
+        };
+        let cw20_addr = app
+            .instantiate_contract(
+                cw20_code_id,
+                contract_owner.clone(),
+                &cw20_instantiate_msg,
+                &[],
+                "Cw20".to_string(),
                 None,
             )
             .unwrap();
