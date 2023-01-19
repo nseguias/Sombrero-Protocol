@@ -9,8 +9,6 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_utils::parse_reply_instantiate_data;
 
-// NOTE: I had Extension and Cw721MetadataContract defined here but moved them to contract.rs, might have to change it back
-
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
