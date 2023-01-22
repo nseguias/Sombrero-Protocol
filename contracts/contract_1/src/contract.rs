@@ -43,7 +43,6 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Boilerplate {} => execute::boilerplate(deps, env, info),
         ExecuteMsg::UpdateConfig {
             new_contract_owner,
             new_bounty_pct,
@@ -73,7 +72,6 @@ pub fn reply(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Boilerplate {} => to_binary(&query::boilerplate(deps)?),
         QueryMsg::Subscriber { protected_addr } => {
             to_binary(&query::subscriber(deps, protected_addr)?)
         }

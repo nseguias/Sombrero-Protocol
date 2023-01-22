@@ -1,13 +1,7 @@
 use cosmwasm_std::{Deps, StdResult};
 
-use crate::msg::{BoilerplateResponse, ConfigResponse, SubscriberResponse};
+use crate::msg::{ConfigResponse, SubscriberResponse};
 use crate::state::{CONFIG, SUBSCRIPTIONS};
-
-pub fn boilerplate(deps: Deps) -> StdResult<BoilerplateResponse> {
-    let _cfg = CONFIG.load(deps.storage)?;
-
-    Ok(BoilerplateResponse {})
-}
 
 pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriberResponse> {
     let subscriptions =

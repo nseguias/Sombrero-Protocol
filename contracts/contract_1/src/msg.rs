@@ -15,7 +15,6 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Boilerplate {},
     UpdateConfig {
         new_contract_owner: Option<String>,
         new_bounty_pct: Option<u16>,
@@ -33,16 +32,11 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(BoilerplateResponse)]
-    Boilerplate {},
     #[returns(ConfigResponse)]
     Config {},
     #[returns(SubscriberResponse)]
     Subscriber { protected_addr: String },
 }
-
-#[cw_serde]
-pub struct BoilerplateResponse {}
 
 #[cw_serde]
 pub struct ConfigResponse {

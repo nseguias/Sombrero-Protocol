@@ -40,6 +40,10 @@ mod tests {
 
     #[test]
     fn hack_process() {
+        let v = vec![Uint128::zero(), Uint128::one()];
+        let sum: Uint128 = v.iter().sum();
+        println!("vec: {}", sum);
+
         let contract_owner = Addr::unchecked("contract_owner");
         let protected_addr = Addr::unchecked("protected_addr");
         let suscriber = Addr::unchecked("suscriber");

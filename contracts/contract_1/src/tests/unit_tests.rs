@@ -2,11 +2,12 @@
 mod tests {
     use crate::{
         contract::{execute, instantiate, query},
-        msg::{BoilerplateResponse, ExecuteMsg, InstantiateMsg, QueryMsg},
+        msg::{ExecuteMsg, InstantiateMsg, QueryMsg, SubscriberResponse},
     };
     use cosmwasm_std::{
         attr, coin, from_binary,
         testing::{mock_dependencies, mock_env, mock_info},
+        Addr,
     };
 
     pub const OWNER: &str = "owner";
@@ -52,7 +53,11 @@ mod tests {
         };
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
-        let execute_msg = ExecuteMsg::Boilerplate {};
+        let execute_msg = ExecuteMsg::Subscribe {
+            protected_addr: Addr::unchecked(USER),
+            bounty_pct: 20,
+            min_bounty: None,
+        };
 
         let execute_info = mock_info(USER, &[coin(1_000, DENOM)]);
 
@@ -63,14 +68,13 @@ mod tests {
             execute_msg.clone(),
         );
 
-        assert_eq!(
-            res.unwrap().attributes,
-            vec![attr("action", "boilerplate"),]
-        );
+        assert_eq!(res.unwrap().attributes, vec![attr("action", "subscribe"),]);
 
         // query highest bidder should return new bidder addr2 & 9990000 (10_000_000 - 10_000)
-        let query_msg = QueryMsg::Boilerplate {};
-        let _res: BoilerplateResponse =
+        let query_msg = QueryMsg::Subscriber {
+            protected_addr: USER.to_string(),
+        };
+        let _res: SubscriberResponse =
             from_binary(&query(deps.as_ref(), env.clone(), query_msg).unwrap()).unwrap();
     }
 }
