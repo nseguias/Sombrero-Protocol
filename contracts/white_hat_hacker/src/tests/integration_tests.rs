@@ -18,7 +18,7 @@ mod tests {
     use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 
     // returns an object that can be used with cw-multi-test
-    fn hacker_contract() -> Box<dyn Contract<Empty>> {
+    fn main_contract() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(hacker_execute, hacker_instantiate, hacker_query)
             .with_reply(hacker_reply);
         Box::new(contract)
@@ -66,7 +66,7 @@ mod tests {
         });
 
         // upload the contract to the blockchain and get back code_id to instantiate the contract
-        let contract_code_id = app.store_code(hacker_contract());
+        let contract_code_id = app.store_code(main_contract());
         let cw721_code_id = app.store_code(cw721_contract());
         let cw20_code_id = app.store_code(cw20_contract());
 
@@ -80,7 +80,7 @@ mod tests {
             cw721_label: "White Hat Hacker Cw721".to_string(),
             cw721_admin: Some("cw721_contract_owner".to_string()),
         };
-        let hacker_contract_addr = app
+        let main_contract_addr = app
             .instantiate_contract(
                 contract_code_id,
                 contract_owner.clone(),
@@ -119,7 +119,7 @@ mod tests {
         };
         app.execute_contract(
             suscriber.clone(),
-            hacker_contract_addr.clone(),
+            main_contract_addr.clone(),
             &execute_msg,
             &[],
         )
@@ -137,8 +137,7 @@ mod tests {
         )
         .unwrap();
 
-        // TODO: I might need to create a Cw20ExecuteMsg::Send{} to send tokens to the contract with a message
-        // Hacker transfers the stolen tokens to the contract
+        // Hacker transfers the stolen tokens to the main contract
         let execute_msg = Cw20ExecuteMsg::Send {
             contract: cw20_addr.to_string(),
             amount: Uint128::from(500_000u128),
@@ -146,7 +145,7 @@ mod tests {
         };
         app.execute_contract(
             hacker.clone(),
-            hacker_contract_addr.clone(),
+            main_contract_addr.clone(),
             &execute_msg,
             &[],
         )
@@ -175,7 +174,7 @@ mod tests {
         let query_msg = QueryMsg::Config {};
         let config_res: ConfigResponse = app
             .wrap()
-            .query_wasm_smart(hacker_contract_addr.clone(), &query_msg)
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
 
         assert_eq!(config_res.contract_owner, "contract_owner");
@@ -187,7 +186,7 @@ mod tests {
         };
         let res: SubscriberResponse = app
             .wrap()
-            .query_wasm_smart(hacker_contract_addr.clone(), &query_msg)
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
         assert_eq!(res.bounty_pct, 20);
         assert_eq!(res.min_bounty, None);
