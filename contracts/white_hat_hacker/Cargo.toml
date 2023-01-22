@@ -1,10 +1,10 @@
 [package]
-name          = "contract_1"
+name          = "white_hat_hacker"
 version = "0.0.0"
 authors       = ["Nahem Seguias <nahemseguias@gmail.com>"]
-description   = "Custom Boilerplate"
+description   = "White Hat Hacker NFT contract"
 edition = "2021"
-repository    = "https://github.com/nseguias/boilerplates"
+repository    = "https://github.com/nseguias/WhiteHatHacker"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -5,10 +5,12 @@ mod tests {
             execute as hacker_execute, instantiate as hacker_instantiate, query as hacker_query,
             reply as hacker_reply,
         },
-        msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, SubscriberResponse},
+        msg::{
+            ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriberResponse,
+        },
     };
     use cosmwasm_std::{coins, to_binary, Addr, Empty, Uint128};
-    use cw20::Cw20ExecuteMsg;
+    use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
     use cw20_base::contract::execute as cw20_execute;
     use cw20_base::contract::instantiate as cw20_instantiate;
     use cw20_base::contract::query as cw20_query;
@@ -96,7 +98,10 @@ mod tests {
             name: "CW20".to_string(),
             symbol: "CWT".to_string(),
             decimals: 6,
-            initial_balances: vec![],
+            initial_balances: vec![Cw20Coin {
+                address: hacker.to_string(),
+                amount: Uint128::from(1_000_000u128),
+            }],
             mint: None,
             marketing: None,
         };
@@ -139,17 +144,20 @@ mod tests {
 
         // Hacker transfers the stolen tokens to the main contract
         let execute_msg = Cw20ExecuteMsg::Send {
-            contract: cw20_addr.to_string(),
+            contract: main_contract_addr.to_string(),
             amount: Uint128::from(500_000u128),
-            msg: to_binary(&0).unwrap(),
+            msg: to_binary(&ExecuteMsg::Receive {
+                cw20_msg: Cw20ReceiveMsg {
+                    sender: hacker.to_string(),
+                    amount: Uint128::from(500_000u128),
+                    msg: to_binary(&ReceiveMsg::DepositCw20 {}).unwrap(),
+                },
+            })
+            .unwrap(),
         };
-        app.execute_contract(
-            hacker.clone(),
-            main_contract_addr.clone(),
-            &execute_msg,
-            &[],
-        )
-        .unwrap();
+
+        app.execute_contract(hacker.clone(), cw20_addr.clone(), &execute_msg, &[])
+            .unwrap();
 
         // // hacker sends stolen tokens to the contract -> NOT WORKING
         // app.send_tokens(

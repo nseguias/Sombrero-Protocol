@@ -6,8 +6,8 @@ use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw721_base::Extension;
 use cw721_base::MintMsg;
 
+use crate::msg::ReceiveMsg;
 use crate::{
-    msg::Cw20HookMsg,
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
     ContractError,
 };
@@ -64,7 +64,7 @@ pub fn handle_receive_cw20(
     }
 
     match from_binary(&cw20_msg.msg) {
-        Ok(Cw20HookMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
+        Ok(ReceiveMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
         _ => Err(ContractError::ErrorParsingInstantiateReply {}),
     }
 }

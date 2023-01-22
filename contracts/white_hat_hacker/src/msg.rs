@@ -55,6 +55,6 @@ pub struct SubscriberResponse {
 pub enum MigrateMsg {}
 
 #[cw_serde]
-pub enum Cw20HookMsg {
+pub enum ReceiveMsg {
     DepositCw20 {},
 }
