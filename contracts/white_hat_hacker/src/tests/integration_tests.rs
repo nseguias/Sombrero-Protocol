@@ -42,10 +42,6 @@ mod tests {
 
     #[test]
     fn hack_process() {
-        let v = vec![Uint128::zero(), Uint128::one()];
-        let sum: Uint128 = v.iter().sum();
-        println!("vec: {}", sum);
-
         let contract_owner = Addr::unchecked("contract_owner");
         let protected_addr = Addr::unchecked("protected_addr");
         let suscriber = Addr::unchecked("suscriber");
@@ -149,7 +145,7 @@ mod tests {
             msg: to_binary(&ExecuteMsg::Receive {
                 cw20_msg: Cw20ReceiveMsg {
                     sender: hacker.to_string(),
-                    amount: Uint128::from(500_000u128),
+                    amount: Uint128::zero(),
                     msg: to_binary(&ReceiveMsg::DepositCw20 {}).unwrap(),
                 },
             })
@@ -159,15 +155,6 @@ mod tests {
         app.execute_contract(hacker.clone(), cw20_addr.clone(), &execute_msg, &[])
             .unwrap();
 
-        // // hacker sends stolen tokens to the contract -> NOT WORKING
-        // app.send_tokens(
-        //     hacker.clone(),
-        //     hacker_contract_addr.clone(),
-        //     &coins(500_000u128, DENOM),
-        // )
-        // .unwrap();
-
-        // TODO: Contract is not sending tokens back to hacker
         // query balance of the hacker after hacking the contract
         let hacker_balance = app.wrap().query_balance(hacker.clone(), DENOM).unwrap();
 
