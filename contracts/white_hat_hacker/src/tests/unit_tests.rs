@@ -22,7 +22,6 @@ mod tests {
         let info = mock_info(OWNER, &[coin(100, DENOM)]);
         let msg = InstantiateMsg {
             protocol_fee: 0,
-            min_bounty: None,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),
@@ -44,7 +43,6 @@ mod tests {
         let info = mock_info(OWNER, &[coin(1_000_000, DENOM)]);
         let msg = InstantiateMsg {
             protocol_fee: 0,
-            min_bounty: None,
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),

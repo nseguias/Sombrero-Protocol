@@ -5,7 +5,6 @@ use cw20::Cw20ReceiveMsg;
 #[cw_serde]
 pub struct InstantiateMsg {
     pub protocol_fee: u16,
-    pub min_bounty: Option<u128>,
     pub cw721_code_id: u64,
     pub cw721_name: String,
     pub cw721_symbol: String,

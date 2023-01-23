@@ -84,7 +84,6 @@ mod tests {
         // instantiate main contract
         let instantiate_msg = InstantiateMsg {
             protocol_fee: 0,
-            min_bounty: None,
             cw721_code_id: cw721_code_id,
             cw721_name: "White Hat Hacker NFT".to_string(),
             cw721_symbol: "WHH".to_string(),
