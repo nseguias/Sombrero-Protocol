@@ -20,6 +20,10 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, contract_name, contract_version)?;
 
+    if msg.protocol_fee > 100 {
+        return Err(ContractError::InvalidProtocolFee {});
+    }
+
     let cfg = Config {
         contract_owner: deps.api.addr_validate(&info.sender.to_string())?,
         protocol_fee: msg.protocol_fee,

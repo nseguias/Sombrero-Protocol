@@ -36,6 +36,9 @@ pub enum ContractError {
 
     #[error("Invalid reply id: {id:?}")]
     UnknownReplyId { id: u64 },
+
+    #[error("Protocol fee must be smaller than or equal to 100%")]
+    InvalidProtocolFee {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
     //

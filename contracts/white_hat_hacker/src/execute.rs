@@ -41,7 +41,6 @@ pub fn subscribe(
 
 pub fn unsubscribe(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     SUBSCRIPTIONS.remove(deps.storage, info.sender);
-
     Ok(Response::new().add_attribute("action", "unsubscribe"))
 }
 
@@ -81,6 +80,8 @@ pub fn deposit_cw20(
     let bounty = subscriptions.bounty_pct as u128 * amount.u128() / 100;
     let cfg = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
+    let config = CONFIG.load(deps.storage)?;
+    let cw721_addr = config.cw721_addr;
 
     // transfer bounty to hacker as a message
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -93,7 +94,6 @@ pub fn deposit_cw20(
     }));
 
     // transfer remaining funds to suscriber as a message
-    // TODO: check recipient address! &
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
@@ -104,13 +104,10 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    let config = CONFIG.load(deps.storage)?;
-    let cw721_addr = config.cw721_addr;
-
+    // mint a new token to hacker as a message
     let num_tokens: NumTokensResponse = deps
         .querier
         .query_wasm_smart(cw721_addr.clone(), &Cw721QueryMsg::NumTokens {})?;
-
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw721_addr.to_string(),
         msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
@@ -195,6 +192,10 @@ pub fn update_config(
         && new_protocol_fee == Some(config.protocol_fee)
     {
         return Err(ContractError::NothingToUpdate {});
+    }
+
+    if new_protocol_fee > Some(100) {
+        return Err(ContractError::InvalidProtocolFee {});
     }
 
     let val_new_contract_owner = deps
