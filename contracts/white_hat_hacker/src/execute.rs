@@ -3,6 +3,7 @@ use cosmwasm_std::{
 };
 use cosmwasm_std::{Empty, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw721::NumTokensResponse;
 use cw721_base::Extension;
 use cw721_base::MintMsg;
 
@@ -55,10 +56,6 @@ pub fn handle_receive_cw20(
     let cw20_addr = info.sender.clone();
     let msg: ReceiveMsg = from_binary(&cw20_msg.msg)?;
 
-    println!("env.contract.address: {}", env.contract.address);
-    println!("cw20_msg.sender: {}", hacker_addr);
-    println!("info.sender: {}", cw20_addr);
-
     match msg {
         ReceiveMsg::DepositCw20 { subscriber } => deposit_cw20(
             deps,
@@ -106,23 +103,23 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    println!("### we're here!!");
-
     let config = CONFIG.load(deps.storage)?;
-    let num_tokens: u64 = deps
+    let num_tokens: NumTokensResponse = deps
         .querier
         .query_wasm_smart(config.cw721_contract_addr, &Cw721QueryMsg::NumTokens {})?;
 
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
-            token_id: (num_tokens + 1).to_string(),
+            token_id: (num_tokens.count + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
             extension: None,
         }))?,
         funds: vec![],
     }));
+
+    println!("### num_tokens: {:?}", num_tokens.count);
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
