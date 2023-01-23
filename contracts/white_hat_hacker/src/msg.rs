@@ -24,9 +24,7 @@ pub enum ExecuteMsg {
         bounty_pct: u16,
         min_bounty: Option<u128>,
     },
-    Receive {
-        cw20_msg: Cw20ReceiveMsg,
-    },
+    Receive(Cw20ReceiveMsg),
 }
 
 #[cw_serde]

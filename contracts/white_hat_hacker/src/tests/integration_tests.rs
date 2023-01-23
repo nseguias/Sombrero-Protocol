@@ -142,13 +142,11 @@ mod tests {
         let execute_msg = Cw20ExecuteMsg::Send {
             contract: main_contract_addr.to_string(),
             amount: Uint128::from(500_000u128),
-            msg: to_binary(&ExecuteMsg::Receive {
-                cw20_msg: Cw20ReceiveMsg {
-                    sender: hacker.to_string(),
-                    amount: Uint128::zero(),
-                    msg: to_binary(&ReceiveMsg::DepositCw20 {}).unwrap(),
-                },
-            })
+            msg: to_binary(&ExecuteMsg::Receive(Cw20ReceiveMsg {
+                sender: hacker.to_string(),
+                amount: Uint128::from(500_000u128),
+                msg: to_binary(&ReceiveMsg::DepositCw20 {}).unwrap(),
+            }))
             .unwrap(),
         };
 

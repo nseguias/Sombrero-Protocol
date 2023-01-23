@@ -52,7 +52,7 @@ pub fn execute(
             bounty_pct,
             min_bounty,
         } => execute::subscribe(deps, env, info, protected_addr, bounty_pct, min_bounty),
-        ExecuteMsg::Receive { cw20_msg } => execute::handle_receive_cw20(deps, env, info, cw20_msg),
+        ExecuteMsg::Receive(cw20_msg) => execute::handle_receive_cw20(deps, env, info, cw20_msg),
     }
 }
 

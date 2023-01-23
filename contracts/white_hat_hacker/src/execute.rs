@@ -1,7 +1,7 @@
-use cosmwasm_std::Empty;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
+use cosmwasm_std::{Empty, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw721_base::Extension;
 use cw721_base::MintMsg;
@@ -15,14 +15,6 @@ use crate::{
 // NOTE: this was ExecuteMsg & QueryMsg before, might have to change it back
 pub type Cw721ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
 pub type Cw721QueryMsg = cw721_base::QueryMsg<Empty>;
-
-pub fn boilerplate(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-) -> Result<Response, ContractError> {
-    Ok(Response::new().add_attribute("action", "boilerplate"))
-}
 
 pub fn subscribe(
     deps: DepsMut,
@@ -58,33 +50,36 @@ pub fn handle_receive_cw20(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     // validate that cw20 contract is sending this message
-    let config = CONFIG.load(deps.storage)?;
-    if config.contract_owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    let hacker_addr = deps.api.addr_validate(&cw20_msg.sender)?;
+    let cw20_addr = info.sender.clone();
+    let msg: ReceiveMsg = from_binary(&cw20_msg.msg)?;
 
-    match from_binary(&cw20_msg.msg) {
-        Ok(ReceiveMsg::DepositCw20 {}) => deposit_cw20(deps, env, info, cw20_msg),
-        _ => Err(ContractError::ErrorParsingInstantiateReply {}),
+    println!("env.contract.address: {}", env.contract.address);
+    println!("cw20_msg.sender: {}", hacker_addr);
+    println!("info.sender: {}", cw20_addr);
+
+    match msg {
+        ReceiveMsg::DepositCw20 {} => {
+            deposit_cw20(deps, env, hacker_addr, cw20_addr, cw20_msg.amount)
+        }
     }
 }
 
 pub fn deposit_cw20(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
-    receive_msg: Cw20ReceiveMsg,
+    hacker_addr: Addr,
+    cw20_addr: Addr,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let hacker_addr = deps.api.addr_validate(&receive_msg.sender)?;
-    let cw20_contract = info.sender.clone();
-    let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_contract.clone())?;
-    let bounty = subscriptions.bounty_pct as u128 * receive_msg.amount.u128() / 100;
+    let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_addr.clone())?;
+    let bounty = subscriptions.bounty_pct as u128 * amount.u128() / 100;
 
     let mut messages = Vec::new();
 
     // transfer bounty to hacker as a message
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_contract.to_string(),
+        contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: hacker_addr.to_string(),
             amount: bounty.into(),
@@ -97,10 +92,10 @@ pub fn deposit_cw20(
     // transfer remaining funds to suscriber as a message
     // TODO: check recipient address! &
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_contract.to_string(),
+        contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: whose_address.to_string(),
-            amount: (receive_msg.amount.u128() - bounty).into(),
+            amount: (amount.u128() - bounty).into(),
         })?,
         funds: vec![],
     }));
@@ -111,7 +106,7 @@ pub fn deposit_cw20(
         .query_wasm_smart(config.cw721_contract_addr, &Cw721QueryMsg::NumTokens {})?;
 
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_contract.to_string(),
+        contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
             token_id: (num_tokens + 1).to_string(),
             owner: hacker_addr.to_string(),
