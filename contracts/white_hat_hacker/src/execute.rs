@@ -104,12 +104,14 @@ pub fn deposit_cw20(
     }));
 
     let config = CONFIG.load(deps.storage)?;
+    let cw721_addr = config.cw721_contract_addr;
+
     let num_tokens: NumTokensResponse = deps
         .querier
-        .query_wasm_smart(config.cw721_contract_addr, &Cw721QueryMsg::NumTokens {})?;
+        .query_wasm_smart(cw721_addr.clone(), &Cw721QueryMsg::NumTokens {})?;
 
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: cw20_addr.to_string(),
+        contract_addr: cw721_addr.to_string(),
         msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
             token_id: (num_tokens.count + 1).to_string(),
             owner: hacker_addr.to_string(),

@@ -10,7 +10,7 @@ mod tests {
         },
     };
     use cosmwasm_std::{coins, to_binary, Addr, Empty, Uint128};
-    use cw20::{Cw20Coin, Cw20ExecuteMsg};
+    use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg, Cw20QueryMsg};
     use cw20_base::contract::{
         execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
     };
@@ -43,9 +43,21 @@ mod tests {
     #[test]
     fn hack_process() {
         let contract_owner = Addr::unchecked("contract_owner");
-        let subscriber = Addr::unchecked("protected_addr");
-        let suscriber = Addr::unchecked("suscriber");
+        let subscriber = Addr::unchecked("subscriber");
         let hacker = Addr::unchecked("hacker");
+
+        // define query balance function
+        fn query_balance(app: &App, cw20_addr: Addr, addr: Addr) -> Uint128 {
+            // query balance of the subscriber
+            let query_msg = Cw20QueryMsg::Balance {
+                address: addr.to_string(),
+            };
+            let balance: BalanceResponse = app
+                .wrap()
+                .query_wasm_smart(cw20_addr.clone(), &query_msg)
+                .unwrap();
+            balance.balance
+        }
 
         // an app object is the blockchain simulator. we send initial balance here too!
         let mut app = App::new(|router, _api, storage| {
@@ -89,13 +101,13 @@ mod tests {
             )
             .unwrap();
 
-        // instantiate cw20 contract
+        // instantiate cw20 contract the subscriber with 1CWT
         let cw20_instantiate_msg = cw20_base::msg::InstantiateMsg {
             name: "CW20".to_string(),
             symbol: "CWT".to_string(),
             decimals: 6,
             initial_balances: vec![Cw20Coin {
-                address: hacker.to_string(),
+                address: subscriber.to_string(),
                 amount: Uint128::from(1_000_000u128),
             }],
             mint: None,
@@ -119,52 +131,69 @@ mod tests {
             min_bounty: None,
         };
         app.execute_contract(
-            suscriber.clone(),
+            subscriber.clone(),
             main_contract_addr.clone(),
             &execute_msg,
             &[],
         )
         .unwrap();
 
-        // query balance of the hacker before hacking the contract
-        let hacker_balance = app.wrap().query_balance(hacker.clone(), DENOM).unwrap();
-        assert_eq!(hacker_balance.amount.u128(), 1_000_000u128);
+        // query balance of the hacker before the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), hacker.clone()),
+            Uint128::zero()
+        );
 
-        // simulate hack: hacker gets funds from protected contract
-        app.send_tokens(
-            subscriber.clone(),
-            hacker.clone(),
-            &coins(500_000u128, DENOM),
-        )
-        .unwrap();
+        // query balance of the subscriber before the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), subscriber.clone()),
+            Uint128::from(1_000_000u128)
+        );
+
+        // simulate hacker hacking the contract (subscriber sends 0.5 tokens to hacker)
+        let execute_msg = Cw20ExecuteMsg::Transfer {
+            recipient: hacker.to_string(),
+            amount: Uint128::from(500_000u128),
+        };
+        app.execute_contract(subscriber.clone(), cw20_addr.clone(), &execute_msg, &[])
+            .unwrap();
+
+        // query balance of the hacker right after the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), hacker.clone()),
+            Uint128::from(500_000u128)
+        );
+
+        // query balance of the subscriber right after the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), subscriber.clone()),
+            Uint128::from(500_000u128)
+        );
 
         // Hacker transfers the stolen tokens to the main contract
-
-        // construct the message to be sent to the main contract
         let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
             subscriber: subscriber.to_string(),
         })
         .unwrap();
-
-        // construct the message to be sent to the cw20 contract
         let msg = Cw20ExecuteMsg::Send {
             contract: main_contract_addr.to_string(),
             amount: Uint128::from(500_000u128),
             msg: send_msg.clone(),
         };
-
         app.execute_contract(hacker.clone(), cw20_addr.clone(), &msg, &[])
             .unwrap();
 
-        // query balance of the hacker after hacking the contract
-        let hacker_balance = app.wrap().query_balance(hacker.clone(), DENOM).unwrap();
+        // query balance of the hacker after giving hacked funds back to the contract
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), hacker.clone()),
+            Uint128::from(100_000u128)
+        );
 
-        assert_eq!(hacker_balance.amount.u128(), 1_100_000u128);
-
-        // query balance of the DAO after being hacked
-        let subscriber_balance = app.wrap().query_balance(suscriber.clone(), DENOM).unwrap();
-
-        assert_eq!(subscriber_balance.amount.u128(), 900_000u128);
+        // query balance of the subscriber after giving hacked funds back to the contract
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), subscriber.clone()),
+            Uint128::from(900_000u128)
+        );
 
         // query config
         let query_msg = QueryMsg::Config {};
