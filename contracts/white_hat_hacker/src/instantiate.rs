@@ -23,7 +23,7 @@ pub fn instantiate(
     let cfg = Config {
         contract_owner: deps.api.addr_validate(&info.sender.to_string())?,
         protocol_fee: msg.protocol_fee,
-        cw721_contract_addr: Addr::unchecked(""),
+        cw721_addr: Addr::unchecked(""),
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -58,7 +58,7 @@ pub fn handle_cw721_instantiate_reply(
     let cw721_addr = deps.api.addr_validate(&res.contract_address)?;
 
     CONFIG.update(deps.storage, |mut cfg| -> Result<_, ContractError> {
-        cfg.cw721_contract_addr = deps.api.addr_validate(&res.contract_address)?;
+        cfg.cw721_addr = deps.api.addr_validate(&res.contract_address)?;
         Ok(cfg)
     })?;
 

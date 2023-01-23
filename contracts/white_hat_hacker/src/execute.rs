@@ -79,7 +79,7 @@ pub fn deposit_cw20(
     let subscriber = deps.api.addr_validate(&subscriber)?;
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, subscriber.clone())?;
     let bounty = subscriptions.bounty_pct as u128 * amount.u128() / 100;
-
+    let cfg = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
 
     // transfer bounty to hacker as a message
@@ -98,13 +98,14 @@ pub fn deposit_cw20(
         contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: subscriptions.subscriber.to_string(),
-            amount: (amount.u128() - bounty).into(),
+            amount: (amount.u128() - bounty - amount.u128() * cfg.protocol_fee as u128 / 100)
+                .into(),
         })?,
         funds: vec![],
     }));
 
     let config = CONFIG.load(deps.storage)?;
-    let cw721_addr = config.cw721_contract_addr;
+    let cw721_addr = config.cw721_addr;
 
     let num_tokens: NumTokensResponse = deps
         .querier
@@ -203,7 +204,7 @@ pub fn update_config(
     let config = Config {
         contract_owner: val_new_contract_owner?,
         protocol_fee: new_protocol_fee.unwrap_or(config.protocol_fee),
-        cw721_contract_addr: config.cw721_contract_addr,
+        cw721_addr: config.cw721_addr,
     };
     CONFIG.save(deps.storage, &config)?;
 

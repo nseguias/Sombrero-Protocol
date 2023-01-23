@@ -19,6 +19,6 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         contract_owner: cfg.contract_owner,
         protocol_fee: cfg.protocol_fee,
-        cw721_contract_addr: cfg.cw721_contract_addr,
+        cw721_addr: cfg.cw721_addr,
     })
 }

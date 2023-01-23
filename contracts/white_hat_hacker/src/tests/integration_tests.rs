@@ -14,6 +14,7 @@ mod tests {
     use cw20_base::contract::{
         execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
     };
+    use cw721::{Cw721QueryMsg, NumTokensResponse};
     use cw721_base::entry::{
         execute as cw721_execute, instantiate as cw721_instantiate, query as cw721_query,
     };
@@ -124,6 +125,17 @@ mod tests {
             )
             .unwrap();
 
+        // query config
+        let query_msg = QueryMsg::Config {};
+        let config: ConfigResponse = app
+            .wrap()
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
+            .unwrap();
+
+        assert_eq!(config.contract_owner, "contract_owner");
+        assert_eq!(config.cw721_addr, "contract1");
+        assert_eq!(config.protocol_fee, 0);
+
         // DAO subscribes to the contract
         let execute_msg = ExecuteMsg::Subscribe {
             subscriber: subscriber.clone(),
@@ -137,6 +149,17 @@ mod tests {
             &[],
         )
         .unwrap();
+
+        // query subscriber
+        let query_msg = QueryMsg::Subscriber {
+            protected_addr: subscriber.to_string(),
+        };
+        let res: SubscriberResponse = app
+            .wrap()
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(res.bounty_pct, 20);
+        assert_eq!(res.min_bounty, None);
 
         // query balance of the hacker before the hack
         assert_eq!(
@@ -195,25 +218,95 @@ mod tests {
             Uint128::from(900_000u128)
         );
 
+        // query number of NFTs minted after the hack (should be 1)
+        let query_msg = Cw721QueryMsg::NumTokens {};
+        let res: NumTokensResponse = app
+            .wrap()
+            .query_wasm_smart(config.cw721_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(res.count, 1);
+
+        // let's hack with new protocol fee 10% (we need to update config first)
+        let execute_msg = ExecuteMsg::UpdateConfig {
+            new_contract_owner: Some("nahem".to_string()),
+            new_bounty_pct: Some(10),
+        };
+        app.execute_contract(
+            contract_owner.clone(),
+            main_contract_addr.clone(),
+            &execute_msg,
+            &[],
+        )
+        .unwrap();
+
         // query config
         let query_msg = QueryMsg::Config {};
-        let config_res: ConfigResponse = app
+        let config: ConfigResponse = app
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
 
-        assert_eq!(config_res.contract_owner, "contract_owner");
-        assert_eq!(config_res.cw721_contract_addr, "contract1");
-        assert_eq!(config_res.protocol_fee, 0);
+        assert_eq!(config.contract_owner, "nahem");
+        assert_eq!(config.cw721_addr, "contract1");
+        assert_eq!(config.protocol_fee, 10);
 
-        let query_msg = QueryMsg::Subscriber {
-            protected_addr: subscriber.to_string(),
+        // simulate hacker hacking the contract (subscriber sends 0.9 tokens to hacker)
+        let execute_msg = Cw20ExecuteMsg::Transfer {
+            recipient: hacker.to_string(),
+            amount: Uint128::from(900_000u128),
         };
-        let res: SubscriberResponse = app
-            .wrap()
-            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
+        app.execute_contract(subscriber.clone(), cw20_addr.clone(), &execute_msg, &[])
             .unwrap();
-        assert_eq!(res.bounty_pct, 20);
-        assert_eq!(res.min_bounty, None);
+
+        // query balance of the hacker right after the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), hacker.clone()),
+            Uint128::from(100_000u128 + 900_000u128),
+        );
+
+        // query balance of the subscriber right after the hack
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), subscriber.clone()),
+            Uint128::zero(),
+        );
+
+        // Hacker transfers the stolen tokens to the main contract
+        let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
+            subscriber: subscriber.to_string(),
+        })
+        .unwrap();
+        let msg = Cw20ExecuteMsg::Send {
+            contract: main_contract_addr.to_string(),
+            amount: Uint128::from(900_000u128),
+            msg: send_msg.clone(),
+        };
+        app.execute_contract(hacker.clone(), cw20_addr.clone(), &msg, &[])
+            .unwrap();
+
+        // query balance of the hacker after giving hacked funds back to the contract
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), hacker.clone()),
+            Uint128::from(100_000u128 + 180_000u128)
+        );
+
+        // query balance of the subscriber after giving hacked funds back to the contract
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), subscriber.clone()),
+            Uint128::from(630_000u128)
+        );
+
+        // query balance of the main contract after paying everyone
+        assert_eq!(
+            query_balance(&app, cw20_addr.clone(), main_contract_addr.clone()),
+            Uint128::from(90_000u128)
+        );
+
+        // query number of NFTs minted after the hack (should be 2)
+        let query_msg = Cw721QueryMsg::NumTokens {};
+        let res: NumTokensResponse = app
+            .wrap()
+            .query_wasm_smart(config.cw721_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(res.count, 2);
     }
 }

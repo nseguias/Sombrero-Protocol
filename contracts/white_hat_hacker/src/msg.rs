@@ -40,7 +40,7 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub contract_owner: Addr,
     pub protocol_fee: u16,
-    pub cw721_contract_addr: Addr,
+    pub cw721_addr: Addr,
 }
 
 #[cw_serde]
