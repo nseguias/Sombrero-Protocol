@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
         new_bounty_pct: Option<u16>,
     },
     Subscribe {
-        protected_addr: Addr,
+        subscriber: Addr,
         bounty_pct: u16,
         min_bounty: Option<u128>,
     },
@@ -54,5 +54,5 @@ pub enum MigrateMsg {}
 
 #[cw_serde]
 pub enum ReceiveMsg {
-    DepositCw20 {},
+    DepositCw20 { subscriber: String },
 }

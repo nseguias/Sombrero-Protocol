@@ -48,10 +48,10 @@ pub fn execute(
             new_bounty_pct,
         } => execute::update_config(deps, env, info, new_contract_owner, new_bounty_pct),
         ExecuteMsg::Subscribe {
-            protected_addr,
+            subscriber,
             bounty_pct,
             min_bounty,
-        } => execute::subscribe(deps, env, info, protected_addr, bounty_pct, min_bounty),
+        } => execute::subscribe(deps, env, info, subscriber, bounty_pct, min_bounty),
         ExecuteMsg::Receive(cw20_msg) => execute::handle_receive_cw20(deps, env, info, cw20_msg),
     }
 }

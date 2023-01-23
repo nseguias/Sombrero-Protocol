@@ -10,13 +10,13 @@ mod tests {
         },
     };
     use cosmwasm_std::{coins, to_binary, Addr, Empty, Uint128};
-    use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
-    use cw20_base::contract::execute as cw20_execute;
-    use cw20_base::contract::instantiate as cw20_instantiate;
-    use cw20_base::contract::query as cw20_query;
-    use cw721_base::entry::execute as cw721_execute;
-    use cw721_base::entry::instantiate as cw721_instantiate;
-    use cw721_base::entry::query as cw721_query;
+    use cw20::{Cw20Coin, Cw20ExecuteMsg};
+    use cw20_base::contract::{
+        execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
+    };
+    use cw721_base::entry::{
+        execute as cw721_execute, instantiate as cw721_instantiate, query as cw721_query,
+    };
     use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 
     // returns an object that can be used with cw-multi-test
@@ -43,7 +43,7 @@ mod tests {
     #[test]
     fn hack_process() {
         let contract_owner = Addr::unchecked("contract_owner");
-        let protected_addr = Addr::unchecked("protected_addr");
+        let subscriber = Addr::unchecked("protected_addr");
         let suscriber = Addr::unchecked("suscriber");
         let hacker = Addr::unchecked("hacker");
 
@@ -55,7 +55,7 @@ mod tests {
                 .unwrap();
             router
                 .bank
-                .init_balance(storage, &protected_addr, coins(1_000_000u128, DENOM))
+                .init_balance(storage, &subscriber, coins(1_000_000u128, DENOM))
                 .unwrap();
             router
                 .bank
@@ -114,7 +114,7 @@ mod tests {
 
         // DAO subscribes to the contract
         let execute_msg = ExecuteMsg::Subscribe {
-            protected_addr: protected_addr.clone(),
+            subscriber: subscriber.clone(),
             bounty_pct: 20,
             min_bounty: None,
         };
@@ -132,25 +132,28 @@ mod tests {
 
         // simulate hack: hacker gets funds from protected contract
         app.send_tokens(
-            protected_addr.clone(),
+            subscriber.clone(),
             hacker.clone(),
             &coins(500_000u128, DENOM),
         )
         .unwrap();
 
         // Hacker transfers the stolen tokens to the main contract
-        let execute_msg = Cw20ExecuteMsg::Send {
+
+        // construct the message to be sent to the main contract
+        let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
+            subscriber: subscriber.to_string(),
+        })
+        .unwrap();
+
+        // construct the message to be sent to the cw20 contract
+        let msg = Cw20ExecuteMsg::Send {
             contract: main_contract_addr.to_string(),
             amount: Uint128::from(500_000u128),
-            msg: to_binary(&ExecuteMsg::Receive(Cw20ReceiveMsg {
-                sender: hacker.to_string(),
-                amount: Uint128::from(500_000u128),
-                msg: to_binary(&ReceiveMsg::DepositCw20 {}).unwrap(),
-            }))
-            .unwrap(),
+            msg: send_msg.clone(),
         };
 
-        app.execute_contract(hacker.clone(), cw20_addr.clone(), &execute_msg, &[])
+        app.execute_contract(hacker.clone(), cw20_addr.clone(), &msg, &[])
             .unwrap();
 
         // query balance of the hacker after hacking the contract
@@ -175,7 +178,7 @@ mod tests {
         assert_eq!(config_res.protocol_fee, 0);
 
         let query_msg = QueryMsg::Subscriber {
-            protected_addr: protected_addr.to_string(),
+            protected_addr: subscriber.to_string(),
         };
         let res: SubscriberResponse = app
             .wrap()

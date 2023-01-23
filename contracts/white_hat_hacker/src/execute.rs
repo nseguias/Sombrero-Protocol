@@ -20,7 +20,7 @@ pub fn subscribe(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    subscribed_addr: Addr,
+    subscriber: Addr,
     bounty_pct: u16,
     min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
@@ -29,10 +29,11 @@ pub fn subscribe(
         return Err(ContractError::InvalidBountyPercentage {});
     }
     let subscriptions = Subscriptions {
+        subscriber: subscriber.clone(),
         bounty_pct,
         min_bounty,
     };
-    SUBSCRIPTIONS.save(deps.storage, subscribed_addr, &subscriptions)?;
+    SUBSCRIPTIONS.save(deps.storage, subscriber, &subscriptions)?;
 
     Ok(Response::new().add_attribute("action", "subscribe"))
 }
@@ -59,20 +60,27 @@ pub fn handle_receive_cw20(
     println!("info.sender: {}", cw20_addr);
 
     match msg {
-        ReceiveMsg::DepositCw20 {} => {
-            deposit_cw20(deps, env, hacker_addr, cw20_addr, cw20_msg.amount)
-        }
+        ReceiveMsg::DepositCw20 { subscriber } => deposit_cw20(
+            deps,
+            env,
+            subscriber,
+            hacker_addr,
+            cw20_addr,
+            cw20_msg.amount,
+        ),
     }
 }
 
 pub fn deposit_cw20(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
+    subscriber: String,
     hacker_addr: Addr,
     cw20_addr: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let subscriptions = SUBSCRIPTIONS.load(deps.storage, cw20_addr.clone())?;
+    let subscriber = deps.api.addr_validate(&subscriber)?;
+    let subscriptions = SUBSCRIPTIONS.load(deps.storage, subscriber.clone())?;
     let bounty = subscriptions.bounty_pct as u128 * amount.u128() / 100;
 
     let mut messages = Vec::new();
@@ -87,18 +95,18 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
-    // Whose address is this?
-    let whose_address = env.contract.address.clone();
     // transfer remaining funds to suscriber as a message
     // TODO: check recipient address! &
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: whose_address.to_string(),
+            recipient: subscriptions.subscriber.to_string(),
             amount: (amount.u128() - bounty).into(),
         })?,
         funds: vec![],
     }));
+
+    println!("### we're here!!");
 
     let config = CONFIG.load(deps.storage)?;
     let num_tokens: u64 = deps
@@ -157,6 +165,7 @@ pub fn update_subscription(
     }
 
     let subscriptions = Subscriptions {
+        subscriber: subscriptions.subscriber,
         bounty_pct: new_bounty_pct.unwrap_or(subscriptions.bounty_pct),
         min_bounty: new_min_bounty,
     };

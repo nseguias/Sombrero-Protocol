@@ -13,6 +13,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 
 #[cw_serde]
 pub struct Subscriptions {
+    pub subscriber: Addr,
     pub bounty_pct: u16,
     pub min_bounty: Option<u128>,
 }

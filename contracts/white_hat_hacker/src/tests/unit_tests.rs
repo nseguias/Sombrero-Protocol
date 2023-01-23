@@ -54,7 +54,7 @@ mod tests {
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
         let execute_msg = ExecuteMsg::Subscribe {
-            protected_addr: Addr::unchecked(USER),
+            subscriber: Addr::unchecked(USER),
             bounty_pct: 20,
             min_bounty: None,
         };
