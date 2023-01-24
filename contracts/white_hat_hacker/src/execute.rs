@@ -1,13 +1,12 @@
+use cosmwasm_std::Uint128;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, WasmMsg,
 };
-use cosmwasm_std::{Empty, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw721::NumTokensResponse;
-use cw721_metadata_onchain::{Extension, MintMsg};
+use cw721_metadata_onchain::{Extension, Metadata, MintMsg, Trait};
 
 use crate::msg::ReceiveMsg;
-use crate::state::Metadata;
 use crate::{
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
     ContractError,
@@ -69,7 +68,7 @@ pub fn handle_receive_cw20(
 
 pub fn deposit_cw20(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     subscriber: String,
     hacker_addr: Addr,
     cw20_addr: Addr,
@@ -104,12 +103,40 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
+    let traits: Vec<Trait> = vec![
+        Trait {
+            display_type: None,
+            trait_type: "date".to_string(),
+            value: env.block.time.to_string(),
+        },
+        Trait {
+            display_type: None,
+            trait_type: "total_amount_hacked".to_string(),
+            value: amount.to_string(),
+        },
+        Trait {
+            display_type: None,
+            trait_type: "bounty".to_string(),
+            value: bounty.to_string(),
+        },
+        Trait {
+            display_type: None,
+            trait_type: "hacker_addr".to_string(),
+            value: hacker_addr.to_string(),
+        },
+    ];
+
     // mint a new token to hacker as a message
     let _metadata = Metadata {
-        date_time: Some("test".to_string()),
-        hacked_amount: Some(Uint128::one()),
-        bounty_received: Some(Uint128::one()),
-        hacker: Some("test".to_string()),
+        image: None,
+        image_data: None,
+        external_url: None,
+        description: None,
+        name: None,
+        attributes: Some(traits),
+        background_color: None,
+        animation_url: None,
+        youtube_url: None,
     };
     let num_tokens: NumTokensResponse = deps
         .querier
