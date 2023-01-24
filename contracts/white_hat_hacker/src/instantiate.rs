@@ -31,7 +31,7 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg)?;
 
-    let cw721_instantiate_msg = cw721_base::msg::InstantiateMsg {
+    let cw721_instantiate_msg = cw721_metadata_onchain::InstantiateMsg {
         name: msg.cw721_name,
         symbol: msg.cw721_symbol,
         minter: env.contract.address.to_string(),

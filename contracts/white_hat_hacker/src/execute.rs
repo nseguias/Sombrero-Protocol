@@ -4,8 +4,7 @@ use cosmwasm_std::{
 use cosmwasm_std::{Empty, Uint128};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw721::NumTokensResponse;
-use cw721_base::Extension;
-use cw721_base::MintMsg;
+use cw721_metadata_onchain::{Extension, MintMsg};
 
 use crate::msg::ReceiveMsg;
 use crate::state::Metadata;
@@ -15,8 +14,8 @@ use crate::{
 };
 
 // NOTE: this was ExecuteMsg & QueryMsg before, might have to change it back
-pub type Cw721ExecuteMsg = cw721_base::ExecuteMsg<Extension, Empty>;
-pub type Cw721QueryMsg = cw721_base::QueryMsg<Empty>;
+pub type Cw721ExecuteMsg = cw721_metadata_onchain::ExecuteMsg;
+pub type Cw721QueryMsg = cw721_metadata_onchain::QueryMsg;
 
 pub fn subscribe(
     deps: DepsMut,
@@ -121,7 +120,7 @@ pub fn deposit_cw20(
             token_id: (num_tokens.count + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
-            extension: None, // this is where metadata goes but it's not working
+            extension: Some(_metadata), // this is where metadata goes but it's not working
         }))?,
         funds: vec![],
     }));

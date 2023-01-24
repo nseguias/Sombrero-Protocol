@@ -15,7 +15,7 @@ mod tests {
         execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
     };
     use cw721::{Cw721QueryMsg, NumTokensResponse};
-    use cw721_base::entry::{
+    use cw721_metadata_onchain::entry::{
         execute as cw721_execute, instantiate as cw721_instantiate, query as cw721_query,
     };
     use cw_multi_test::{App, Contract, ContractWrapper, Executor};

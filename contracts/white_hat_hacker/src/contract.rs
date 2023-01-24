@@ -16,7 +16,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const INSTANTIATE_CW721_REPLY_ID: u64 = 2;
 
 pub type Extension = Option<Metadata>;
-pub type Cw721MetadataContract<'a> = cw721_base::Cw721Contract<'a, Extension, Empty, Empty, Empty>;
+pub type Cw721MetadataContract<'a> = cw721_metadata_onchain::Cw721MetadataContract<'a>;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
