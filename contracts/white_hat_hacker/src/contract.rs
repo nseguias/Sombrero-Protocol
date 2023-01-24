@@ -7,6 +7,7 @@ use cosmwasm_std::{
 use crate::error::ContractError;
 use crate::instantiate::handle_cw721_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+// use cw721_metadata_onchain::Metadata;
 use crate::state::Metadata;
 use crate::{execute, instantiate, query};
 

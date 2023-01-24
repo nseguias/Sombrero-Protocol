@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 
 #[cw_serde]
@@ -26,23 +26,12 @@ pub struct Hacker {
 }
 
 #[cw_serde]
-pub struct Trait {
-    pub display_type: Option<String>,
-    pub trait_type: String,
-    pub value: String,
-}
-#[cw_serde]
 #[derive(Default)]
 pub struct Metadata {
-    pub image: Option<String>,
-    pub image_data: Option<String>,
-    pub external_url: Option<String>,
-    pub description: Option<String>,
-    pub name: Option<String>,
-    pub attributes: Option<Vec<Trait>>,
-    pub background_color: Option<String>,
-    pub animation_url: Option<String>,
-    pub youtube_url: Option<String>,
+    pub date_time: Option<String>,
+    pub hacked_amount: Option<Uint128>,
+    pub bounty_received: Option<Uint128>,
+    pub hacker: Option<String>,
 }
 
 pub const SUBSCRIPTIONS: Map<Addr, Subscriptions> = Map::new("conditions");

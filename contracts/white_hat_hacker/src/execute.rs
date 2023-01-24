@@ -8,6 +8,7 @@ use cw721_base::Extension;
 use cw721_base::MintMsg;
 
 use crate::msg::ReceiveMsg;
+use crate::state::Metadata;
 use crate::{
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
     ContractError,
@@ -105,6 +106,12 @@ pub fn deposit_cw20(
     }));
 
     // mint a new token to hacker as a message
+    let _metadata = Metadata {
+        date_time: Some("test".to_string()),
+        hacked_amount: Some(Uint128::one()),
+        bounty_received: Some(Uint128::one()),
+        hacker: Some("test".to_string()),
+    };
     let num_tokens: NumTokensResponse = deps
         .querier
         .query_wasm_smart(cw721_addr.clone(), &Cw721QueryMsg::NumTokens {})?;
@@ -114,12 +121,10 @@ pub fn deposit_cw20(
             token_id: (num_tokens.count + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
-            extension: None,
+            extension: None, // this is where metadata goes but it's not working
         }))?,
         funds: vec![],
     }));
-
-    println!("### num_tokens: {:?}", num_tokens.count);
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
