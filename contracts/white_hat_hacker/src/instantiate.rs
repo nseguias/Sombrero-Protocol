@@ -24,6 +24,7 @@ pub fn instantiate(
         return Err(ContractError::InvalidProtocolFee {});
     }
 
+    // save contract details in state (cw721_addr will be set later)
     let cfg = Config {
         contract_owner: deps.api.addr_validate(&info.sender.to_string())?,
         protocol_fee: msg.protocol_fee,
@@ -31,12 +32,12 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg)?;
 
+    // instantiate cw721 contract with a subMsg (handled in handle_cw721_instantiate_reply)
     let cw721_instantiate_msg = cw721_metadata_onchain::InstantiateMsg {
         name: msg.cw721_name,
         symbol: msg.cw721_symbol,
         minter: env.contract.address.to_string(),
     };
-
     let message = SubMsg::<Empty>::reply_on_success(
         WasmMsg::Instantiate {
             admin: msg.cw721_admin,
@@ -51,6 +52,7 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("action", "instantiate")
         .add_attribute("contract_owner", cfg.contract_owner)
+        .add_attribute("protocol_fee", cfg.protocol_fee.to_string())
         .add_submessage(message))
 }
 
@@ -59,8 +61,9 @@ pub fn handle_cw721_instantiate_reply(
     reply: Reply,
 ) -> Result<Response, ContractError> {
     let res = parse_reply_instantiate_data(reply)?;
-    let cw721_addr = deps.api.addr_validate(&res.contract_address)?;
 
+    // update cw721_addr in the main contract state
+    let cw721_addr = deps.api.addr_validate(&res.contract_address)?;
     CONFIG.update(deps.storage, |mut cfg| -> Result<_, ContractError> {
         cfg.cw721_addr = deps.api.addr_validate(&res.contract_address)?;
         Ok(cfg)

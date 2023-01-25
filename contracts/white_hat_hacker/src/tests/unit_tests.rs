@@ -29,10 +29,14 @@ mod tests {
             cw721_admin: Some("contract_address".to_string()),
         };
         let res = instantiate(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(res.attributes.len(), 2);
+        assert_eq!(res.attributes.len(), 3);
         assert_eq!(
             res.attributes,
-            vec![attr("action", "instantiate"), attr("contract_owner", OWNER)]
+            vec![
+                attr("action", "instantiate"),
+                attr("contract_owner", OWNER),
+                attr("protocol_fee", 0.to_string())
+            ]
         );
     }
 
@@ -66,7 +70,15 @@ mod tests {
             execute_msg.clone(),
         );
 
-        assert_eq!(res.unwrap().attributes, vec![attr("action", "subscribe"),]);
+        assert_eq!(
+            res.unwrap().attributes,
+            vec![
+                attr("action", "subscribe"),
+                attr("subscriber", USER),
+                attr("bounty_pct", 20.to_string()),
+                attr("min_bounty", "0"),
+            ]
+        );
 
         // query highest bidder should return new bidder addr2 & 9990000 (10_000_000 - 10_000)
         let query_msg = QueryMsg::Subscriber {

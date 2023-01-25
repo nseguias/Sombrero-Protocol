@@ -24,23 +24,30 @@ pub fn subscribe(
     bounty_pct: u16,
     min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
-    // Protocol owner, DAO or auiting firm can subscribe to the contract
     if bounty_pct > 100 {
         return Err(ContractError::InvalidBountyPercentage {});
     }
+    // save subscription details on state
     let subscriptions = Subscriptions {
         subscriber: subscriber.clone(),
         bounty_pct,
         min_bounty,
     };
-    SUBSCRIPTIONS.save(deps.storage, subscriber, &subscriptions)?;
+    SUBSCRIPTIONS.save(deps.storage, subscriber.clone(), &subscriptions)?;
 
-    Ok(Response::new().add_attribute("action", "subscribe"))
+    Ok(Response::new()
+        .add_attribute("action", "subscribe")
+        .add_attribute("subscriber", subscriber)
+        .add_attribute("bounty_pct", bounty_pct.to_string())
+        .add_attribute("min_bounty", min_bounty.unwrap_or(0u128).to_string()))
 }
 
 pub fn unsubscribe(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    SUBSCRIPTIONS.remove(deps.storage, info.sender);
-    Ok(Response::new().add_attribute("action", "unsubscribe"))
+    // sender will be removed from subscriptions (if exists)
+    SUBSCRIPTIONS.remove(deps.storage, info.sender.clone());
+    Ok(Response::new()
+        .add_attribute("action", "unsubscribe")
+        .add_attribute("unsubscribed", info.sender))
 }
 
 pub fn handle_receive_cw20(
@@ -103,6 +110,7 @@ pub fn deposit_cw20(
         funds: vec![],
     }));
 
+    // create NFT metadata with hack details
     let traits: Vec<Trait> = vec![
         Trait {
             display_type: None,
@@ -126,8 +134,8 @@ pub fn deposit_cw20(
         },
     ];
 
-    // mint a new token to hacker as a message
-    let _metadata = Metadata {
+    // mint a new NFT with hack details to hacker's address as a message
+    let metadata = Metadata {
         image: None,
         image_data: None,
         external_url: None,
@@ -147,7 +155,7 @@ pub fn deposit_cw20(
             token_id: (num_tokens.count + 1).to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
-            extension: Some(_metadata), // this is where metadata goes but it's not working
+            extension: Some(metadata),
         }))?,
         funds: vec![],
     }));
@@ -161,18 +169,36 @@ pub fn withdraw(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    amount: Option<u128>,
+    cw20_addr: String,
+    amount: u128,
+    recipient: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.contract_owner {
         return Err(ContractError::Unauthorized {});
     }
+    if amount == 0 {
+        return Err(ContractError::NothingToWithdraw {});
+    }
+    let recipient = deps
+        .api
+        .addr_validate(&recipient.unwrap_or(config.contract_owner.to_string()))?;
 
-    let amount = amount.unwrap_or(0u128);
+    // send cw20 tokens to recipient as a message
+    let send_msg = Cw20ExecuteMsg::Transfer {
+        recipient: recipient.to_string(),
+        amount: Uint128::from(amount),
+    };
+    let msg = WasmMsg::Execute {
+        contract_addr: cw20_addr,
+        msg: to_binary(&send_msg)?,
+        funds: vec![],
+    };
 
     Ok(Response::new()
         .add_attribute("action", "withdraw")
-        .add_attribute("amount", amount.to_string()))
+        .add_attribute("amount", amount.to_string())
+        .add_message(msg))
 }
 
 pub fn update_subscription(

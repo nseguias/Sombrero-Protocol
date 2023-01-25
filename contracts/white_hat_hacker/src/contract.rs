@@ -7,16 +7,11 @@ use cosmwasm_std::{
 use crate::error::ContractError;
 use crate::instantiate::handle_cw721_instantiate_reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-// use cw721_metadata_onchain::Metadata;
-use crate::state::Metadata;
 use crate::{execute, instantiate, query};
 
 const CONTRACT_NAME: &str = "crates.io:white-hat-hacker";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const INSTANTIATE_CW721_REPLY_ID: u64 = 2;
-
-pub type Extension = Option<Metadata>;
-pub type Cw721MetadataContract<'a> = cw721_metadata_onchain::Cw721MetadataContract<'a>;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -53,7 +48,13 @@ pub fn execute(
             bounty_pct,
             min_bounty,
         } => execute::subscribe(deps, env, info, subscriber, bounty_pct, min_bounty),
+        ExecuteMsg::Unsubscribe {} => execute::unsubscribe(deps, env, info),
         ExecuteMsg::Receive(cw20_msg) => execute::handle_receive_cw20(deps, env, info, cw20_msg),
+        ExecuteMsg::Withdraw {
+            cw20_addr,
+            amount,
+            recipient,
+        } => execute::withdraw(deps, env, info, cw20_addr, amount, recipient),
     }
 }
 
