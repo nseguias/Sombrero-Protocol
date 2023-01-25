@@ -74,10 +74,11 @@ pub fn reply(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Config {} => to_binary(&query::config(deps)?),
         QueryMsg::Subscriber { protected_addr } => {
             to_binary(&query::subscriber(deps, protected_addr)?)
         }
-        QueryMsg::Config {} => to_binary(&query::config(deps)?),
+        QueryMsg::Subscriptions {} => to_binary(&query::subscriptions(deps)?),
     }
 }
 

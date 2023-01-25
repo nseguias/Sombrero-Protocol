@@ -1,6 +1,6 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, Order, StdResult};
 
-use crate::msg::{ConfigResponse, SubscriberResponse};
+use crate::msg::{ConfigResponse, SubscriberResponse, SubscriptionsResponse};
 use crate::state::{CONFIG, SUBSCRIPTIONS};
 
 pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriberResponse> {
@@ -21,4 +21,20 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         protocol_fee: cfg.protocol_fee,
         cw721_addr: cfg.cw721_addr,
     })
+}
+
+pub fn subscriptions(deps: Deps) -> StdResult<Vec<SubscriptionsResponse>> {
+    let subscriptions = SUBSCRIPTIONS
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| {
+            let (addr, subscriptions) = item?;
+            Ok(SubscriptionsResponse {
+                subscriber: addr,
+                bounty_pct: subscriptions.bounty_pct,
+                min_bounty: subscriptions.min_bounty,
+            })
+        })
+        .collect::<StdResult<Vec<SubscriptionsResponse>>>()?;
+
+    Ok(subscriptions)
 }

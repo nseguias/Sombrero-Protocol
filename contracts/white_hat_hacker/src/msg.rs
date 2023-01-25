@@ -39,6 +39,8 @@ pub enum QueryMsg {
     Config {},
     #[returns(SubscriberResponse)]
     Subscriber { protected_addr: String },
+    #[returns(SubscriptionsResponse)]
+    Subscriptions {},
 }
 
 #[cw_serde]
@@ -50,6 +52,13 @@ pub struct ConfigResponse {
 
 #[cw_serde]
 pub struct SubscriberResponse {
+    pub bounty_pct: u16,
+    pub min_bounty: Option<u128>,
+}
+
+#[cw_serde]
+pub struct SubscriptionsResponse {
+    pub subscriber: Addr,
     pub bounty_pct: u16,
     pub min_bounty: Option<u128>,
 }
