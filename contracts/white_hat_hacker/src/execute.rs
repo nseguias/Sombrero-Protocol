@@ -107,7 +107,7 @@ pub fn deposit_cw20(
         Trait {
             display_type: None,
             trait_type: "date".to_string(),
-            value: env.block.time.to_string(),
+            value: env.block.time.seconds().to_string(),
         },
         Trait {
             display_type: None,

@@ -9,14 +9,15 @@ mod tests {
             ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriberResponse,
         },
     };
-    use cosmwasm_std::{coins, to_binary, Addr, Empty, Uint128};
+    use cosmwasm_std::{to_binary, Addr, Empty, Uint128};
     use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg, Cw20QueryMsg};
     use cw20_base::contract::{
         execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
     };
-    use cw721::{Cw721QueryMsg, NumTokensResponse};
-    use cw721_metadata_onchain::entry::{
-        execute as cw721_execute, instantiate as cw721_instantiate, query as cw721_query,
+    use cw721::{Cw721QueryMsg, NftInfoResponse, NumTokensResponse};
+    use cw721_metadata_onchain::{
+        entry::{execute as cw721_execute, instantiate as cw721_instantiate, query as cw721_query},
+        Metadata, Trait,
     };
     use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 
@@ -39,17 +40,18 @@ mod tests {
         Box::new(contract)
     }
 
-    const DENOM: &str = "uATOM";
+    const CONTRACT_OWNER: &str = "contract_owner";
+    const SUBSCRIBER: &str = "subscriber";
+    const HACKER: &str = "hacker";
 
     #[test]
     fn hack_process() {
-        let contract_owner = Addr::unchecked("contract_owner");
-        let subscriber = Addr::unchecked("subscriber");
-        let hacker = Addr::unchecked("hacker");
+        let contract_owner = Addr::unchecked(CONTRACT_OWNER);
+        let subscriber = Addr::unchecked(SUBSCRIBER);
+        let hacker = Addr::unchecked(HACKER);
 
         // define query balance function
         fn query_balance(app: &App, cw20_addr: Addr, addr: Addr) -> Uint128 {
-            // query balance of the subscriber
             let query_msg = Cw20QueryMsg::Balance {
                 address: addr.to_string(),
             };
@@ -61,22 +63,9 @@ mod tests {
         }
 
         // an app object is the blockchain simulator. we send initial balance here too!
-        let mut app = App::new(|router, _api, storage| {
-            router
-                .bank
-                .init_balance(storage, &contract_owner, coins(1_000_000u128, DENOM))
-                .unwrap();
-            router
-                .bank
-                .init_balance(storage, &subscriber, coins(1_000_000u128, DENOM))
-                .unwrap();
-            router
-                .bank
-                .init_balance(storage, &hacker, coins(1_000_000u128, DENOM))
-                .unwrap();
-        });
+        let mut app = App::new(|_router, _api, _storage| {});
 
-        // upload the contract to the blockchain and get back code_id to instantiate the contract
+        // upload the contracts to the blockchain and get back code_id to instantiate the contract
         let contract_code_id = app.store_code(main_contract());
         let cw721_code_id = app.store_code(cw721_contract());
         let cw20_code_id = app.store_code(cw20_contract());
@@ -95,13 +84,13 @@ mod tests {
                 contract_code_id,
                 contract_owner.clone(),
                 &instantiate_msg,
-                &coins(1_000_000u128, DENOM),
+                &[],
                 "White Hat Hacker main contract",
                 None,
             )
             .unwrap();
 
-        // instantiate cw20 contract the subscriber with 1CWT
+        // manually instantiate a cw20 contract and send the subscriber 1CWT
         let cw20_instantiate_msg = cw20_base::msg::InstantiateMsg {
             name: "CW20".to_string(),
             symbol: "CWT".to_string(),
@@ -307,5 +296,39 @@ mod tests {
             .query_wasm_smart(config.cw721_addr.clone(), &query_msg)
             .unwrap();
         assert_eq!(res.count, 2);
+
+        // query NFT onchain metadata with custom attributes & Traits
+        let query_msg = Cw721QueryMsg::NftInfo {
+            token_id: "2".to_string(),
+        };
+        let res: NftInfoResponse<Metadata> = app
+            .wrap()
+            .query_wasm_smart(config.cw721_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(
+            res.extension.attributes,
+            Some(vec![
+                Trait {
+                    display_type: None,
+                    trait_type: "date".to_string(),
+                    value: "1571797419".to_string(),
+                },
+                Trait {
+                    display_type: None,
+                    trait_type: "total_amount_hacked".to_string(),
+                    value: 900_000u128.to_string(),
+                },
+                Trait {
+                    display_type: None,
+                    trait_type: "bounty".to_string(),
+                    value: 180_000u128.to_string(),
+                },
+                Trait {
+                    display_type: None,
+                    trait_type: "hacker_addr".to_string(),
+                    value: HACKER.to_string(),
+                },
+            ])
+        );
     }
 }
