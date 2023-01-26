@@ -6,7 +6,7 @@ mod tests {
             reply as hacker_reply,
         },
         msg::{
-            ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriberResponse,
+            ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriptionResponse,
             SubscriptionsResponse,
         },
     };
@@ -140,10 +140,10 @@ mod tests {
         .unwrap();
 
         // query subscriber
-        let query_msg = QueryMsg::Subscriber {
+        let query_msg = QueryMsg::Subscription {
             protected_addr: subscriber.to_string(),
         };
-        let res: SubscriberResponse = app
+        let res: SubscriptionResponse = app
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();

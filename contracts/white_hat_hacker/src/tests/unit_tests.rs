@@ -2,7 +2,7 @@
 mod tests {
     use crate::{
         contract::{execute, instantiate, query},
-        msg::{ExecuteMsg, InstantiateMsg, QueryMsg, SubscriberResponse},
+        msg::{ExecuteMsg, InstantiateMsg, QueryMsg, SubscriptionResponse},
     };
     use cosmwasm_std::{
         attr, coin, from_binary,
@@ -81,10 +81,10 @@ mod tests {
         );
 
         // query highest bidder should return new bidder addr2 & 9990000 (10_000_000 - 10_000)
-        let query_msg = QueryMsg::Subscriber {
+        let query_msg = QueryMsg::Subscription {
             protected_addr: USER.to_string(),
         };
-        let _res: SubscriberResponse =
+        let _res: SubscriptionResponse =
             from_binary(&query(deps.as_ref(), env.clone(), query_msg).unwrap()).unwrap();
     }
 }

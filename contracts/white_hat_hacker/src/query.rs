@@ -1,6 +1,6 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 
-use crate::msg::{ConfigResponse, SubscriberResponse, SubscriptionsResponse};
+use crate::msg::{ConfigResponse, SubscriptionResponse, SubscriptionsResponse};
 use crate::state::{CONFIG, SUBSCRIPTIONS};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -13,11 +13,11 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
-pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriberResponse> {
+pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriptionResponse> {
     let subscriptions =
         SUBSCRIPTIONS.load(deps.storage, deps.api.addr_validate(&protected_addr)?)?;
 
-    Ok(SubscriberResponse {
+    Ok(SubscriptionResponse {
         bounty_pct: subscriptions.bounty_pct,
         min_bounty: subscriptions.min_bounty,
     })

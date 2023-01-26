@@ -87,7 +87,7 @@ pub fn reply(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query::config(deps)?),
-        QueryMsg::Subscriber { protected_addr } => {
+        QueryMsg::Subscription { protected_addr } => {
             to_binary(&query::subscriber(deps, protected_addr)?)
         }
         QueryMsg::Subscriptions {} => to_binary(&query::subscriptions(deps)?),

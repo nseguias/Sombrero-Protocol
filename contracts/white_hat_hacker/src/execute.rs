@@ -48,11 +48,11 @@ pub fn unsubscribe(
     info: MessageInfo,
     subscriber: String,
 ) -> Result<Response, ContractError> {
-    // sender will be removed from subscriptions (if exists)
     let subscription = SUBSCRIPTIONS.load(deps.storage, deps.api.addr_validate(&subscriber)?)?;
     if info.sender != subscription.subscriber {
         return Err(ContractError::Unauthorized {});
     }
+
     SUBSCRIPTIONS.remove(deps.storage, info.sender.clone());
     Ok(Response::new()
         .add_attribute("action", "unsubscribe")
