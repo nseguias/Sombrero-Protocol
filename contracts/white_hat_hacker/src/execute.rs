@@ -13,10 +13,14 @@ use crate::{
     ContractError,
 };
 
-// NOTE: this was ExecuteMsg & QueryMsg before, might have to change it back
 pub type Cw721ExecuteMsg = cw721_metadata_onchain::ExecuteMsg;
 pub type Cw721QueryMsg = cw721_metadata_onchain::QueryMsg;
 
+/// smart contract owners can subscribe their contracts to the protocol to have them protected.
+/// subscriber is the address of the contract to be protected
+/// bounty_pct is the percentage of the amount hacked that will be paid to the hacker as reward
+/// min_bounty is the minimum amount of tokens that the hacker will receive as reward for hacking the contract
+///
 pub fn subscribe(
     deps: DepsMut,
     _env: Env,
@@ -43,6 +47,8 @@ pub fn subscribe(
         .add_attribute("min_bounty", min_bounty.unwrap_or(0u128).to_string()))
 }
 
+/// smart contract owners can unsubscribe their contracts from the protocol to stop participating in the bounty program
+///
 pub fn unsubscribe(
     deps: DepsMut,
     _env: Env,
@@ -60,6 +66,10 @@ pub fn unsubscribe(
         .add_attribute("unsubscribed", info.sender))
 }
 
+/// hackers send hacked cw20 tokens to the contract to claim their bounty
+/// they have to include the address of the contract they hacked in the DepositCw20 message
+/// then the contract will call the deposit_cw20 function to handle the bounty payment.
+///
 pub fn handle_receive_cw20(
     deps: DepsMut,
     env: Env,
@@ -83,6 +93,11 @@ pub fn handle_receive_cw20(
     }
 }
 
+/// deposit_cw20 will calculate the bounty amount and send it to the hacker.
+/// it will also send the remaining funds to the contract owner after deducting the protocol fee
+/// and mint an NFT to the hacker address with the hack details.
+/// aditionally, the contract will store hack details in state.
+///
 pub fn deposit_cw20(
     deps: DepsMut,
     env: Env,
@@ -192,6 +207,9 @@ pub fn deposit_cw20(
         .add_messages(messages))
 }
 
+/// withdraw will transfer the contract's cw20 tokens earned as protocol fees to the recipient
+/// or to the contract owner if no recipient is specified. This can only be called by the contract owner.
+///
 pub fn withdraw(
     deps: DepsMut,
     _env: Env,
@@ -211,23 +229,27 @@ pub fn withdraw(
         .api
         .addr_validate(&recipient.unwrap_or(config.contract_owner.to_string()))?;
 
-    // send cw20 tokens to recipient as a message
-    let send_msg = Cw20ExecuteMsg::Transfer {
+    // transfer cw20 tokens to recipient as a message
+    let tx_msg = Cw20ExecuteMsg::Transfer {
         recipient: recipient.to_string(),
         amount: Uint128::from(amount),
     };
     let msg = WasmMsg::Execute {
         contract_addr: cw20_addr,
-        msg: to_binary(&send_msg)?,
+        msg: to_binary(&tx_msg)?,
         funds: vec![],
     };
 
     Ok(Response::new()
         .add_attribute("action", "withdraw")
         .add_attribute("amount", amount.to_string())
+        .add_attribute("recipient", recipient)
         .add_message(msg))
 }
 
+/// update_subscription allows a subscriber to update their subscription details.
+/// This can only be called by the subscriber.
+///
 pub fn update_subscription(
     deps: DepsMut,
     _env: Env,
@@ -262,6 +284,10 @@ pub fn update_subscription(
     Ok(Response::new().add_attribute("action", "update_subscription"))
 }
 
+/// update_config allows the contract owner to update the contract owner and/or the protocol fee.
+/// This can only be called by the contract owner.
+/// The protocol fee is a percentage of the total amount hacked that is paid to the contract owner.
+///
 pub fn update_config(
     deps: DepsMut,
     _env: Env,

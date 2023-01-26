@@ -13,26 +13,11 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Beneficiary must be different from the protected contract")]
-    BeneficiaryMustBeDifferentFromProtectedContract {},
-
     #[error("Bounty % must be smaller than or equal to 100%")]
     InvalidBountyPercentage {},
 
     #[error("Nothing to upgrade")]
     NothingToUpdate,
-
-    #[error("New contract owner must be different from the current contract owner")]
-    NewContractOwnerMustBeDifferent,
-
-    #[error("Not subscribed")]
-    NotSubscribed {},
-
-    #[error("Invalid Cw20HookMsg")]
-    InvalidCw20HookMsg {},
-
-    #[error("Error parsing instantiate reply")]
-    ErrorParsingInstantiateReply {},
 
     #[error("Invalid reply id: {id:?}")]
     UnknownReplyId { id: u64 },

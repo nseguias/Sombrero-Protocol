@@ -41,6 +41,7 @@ mod tests {
         Box::new(contract)
     }
 
+    // define some constants for the test
     const CONTRACT_OWNER: &str = "contract_owner";
     const SUBSCRIBER: &str = "subscriber";
     const HACKER: &str = "hacker";
@@ -120,12 +121,11 @@ mod tests {
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
-
         assert_eq!(config.contract_owner, "contract_owner");
         assert_eq!(config.cw721_addr, "contract1");
         assert_eq!(config.protocol_fee, 0);
 
-        // DAO subscribes to the contract
+        // dao subscribes to the contract
         let execute_msg = ExecuteMsg::Subscribe {
             subscriber: subscriber.clone(),
             bounty_pct: 20,
@@ -182,7 +182,7 @@ mod tests {
             Uint128::from(500_000u128)
         );
 
-        // Hacker transfers the stolen tokens to the main contract
+        // hacker transfers the stolen tokens to the main contract
         let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
             subscriber: subscriber.to_string(),
         })
@@ -259,7 +259,7 @@ mod tests {
             Uint128::zero(),
         );
 
-        // Hacker transfers the stolen tokens to the main contract
+        // hacker transfers the stolen tokens to the main contract
         let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
             subscriber: subscriber.to_string(),
         })
@@ -358,7 +358,6 @@ mod tests {
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
-
         assert_eq!(subscriptions.len(), 2);
         assert_eq!(subscriptions[0].subscriber, subscriber.to_string());
         assert_eq!(subscriptions[0].bounty_pct, 20);
@@ -414,7 +413,7 @@ mod tests {
             chain_id: "terra".to_string(),
         });
 
-        // Hacker transfers the stolen tokens to the main contract for a second hack to subscriber2
+        // hacker transfers the stolen tokens to the main contract for a third hack
         let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
             subscriber: subscriber2.to_string(),
         })
@@ -427,7 +426,7 @@ mod tests {
         app.execute_contract(hacker.clone(), cw20_addr.clone(), &msg, &[])
             .unwrap();
 
-        // get hacks of subscriber2
+        // query hacks after 3rd hack (1st & 2nd happened at the same time, thus only 2 entries)
         let query_msg = QueryMsg::Hacks {};
         let hacks: Vec<HacksResponse> = app
             .wrap()

@@ -9,8 +9,6 @@ pub struct Config {
     pub cw721_addr: Addr,
 }
 
-pub const CONFIG: Item<Config> = Item::new("config");
-
 #[cw_serde]
 pub struct Subscriptions {
     pub subscriber: Addr,
@@ -27,5 +25,6 @@ pub struct Hacks {
     pub hacker_addr: Addr,
 }
 
+pub const CONFIG: Item<Config> = Item::new("config");
 pub const SUBSCRIPTIONS: Map<Addr, Subscriptions> = Map::new("conditions");
 pub const HACKS: Map<(Addr, u64), Hacks> = Map::new("hacks");

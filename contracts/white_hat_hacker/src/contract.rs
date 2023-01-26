@@ -71,12 +71,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(
-    deps: DepsMut,
-    _env: Env,
-    // _info: MessageInfo,
-    reply: Reply,
-) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         INSTANTIATE_CW721_REPLY_ID => handle_cw721_instantiate_reply(deps, reply),
         id => Err(ContractError::UnknownReplyId { id }),

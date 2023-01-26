@@ -3,6 +3,8 @@ use cosmwasm_std::{Deps, Order, StdResult};
 use crate::msg::{ConfigResponse, HacksResponse, SubscriptionResponse, SubscriptionsResponse};
 use crate::state::{CONFIG, HACKS, SUBSCRIPTIONS};
 
+/// Returns the contract configuration
+///
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let cfg = CONFIG.load(deps.storage)?;
 
@@ -13,6 +15,8 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
+/// Returns the bounty conditions for a given protected address
+///
 pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriptionResponse> {
     let subscriptions =
         SUBSCRIPTIONS.load(deps.storage, deps.api.addr_validate(&protected_addr)?)?;
@@ -23,6 +27,8 @@ pub fn subscriber(deps: Deps, protected_addr: String) -> StdResult<SubscriptionR
     })
 }
 
+/// Returns the list of protected addresses and their associated bounty conditions
+///
 pub fn subscriptions(deps: Deps) -> StdResult<Vec<SubscriptionsResponse>> {
     let subscriptions = SUBSCRIPTIONS
         .range(deps.storage, None, None, Order::Ascending)
@@ -39,6 +45,8 @@ pub fn subscriptions(deps: Deps) -> StdResult<Vec<SubscriptionsResponse>> {
     Ok(subscriptions)
 }
 
+/// Returns the list of hacks and their details
+///
 pub fn hacks(deps: Deps) -> StdResult<Vec<HacksResponse>> {
     let hacks = HACKS
         .range(deps.storage, None, None, Order::Ascending)
