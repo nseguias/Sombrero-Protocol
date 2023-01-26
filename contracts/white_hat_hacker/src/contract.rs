@@ -91,6 +91,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::subscriber(deps, protected_addr)?)
         }
         QueryMsg::Subscriptions {} => to_binary(&query::subscriptions(deps)?),
+        QueryMsg::Hacks {} => to_binary(&query::hacks(deps)?),
     }
 }
 

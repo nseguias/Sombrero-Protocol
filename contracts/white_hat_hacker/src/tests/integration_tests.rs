@@ -6,11 +6,11 @@ mod tests {
             reply as hacker_reply,
         },
         msg::{
-            ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriptionResponse,
-            SubscriptionsResponse,
+            ConfigResponse, ExecuteMsg, HacksResponse, InstantiateMsg, QueryMsg, ReceiveMsg,
+            SubscriptionResponse, SubscriptionsResponse,
         },
     };
-    use cosmwasm_std::{to_binary, Addr, Empty, Uint128};
+    use cosmwasm_std::{to_binary, Addr, BlockInfo, Empty, Timestamp, Uint128};
     use cw20::{BalanceResponse, Cw20Coin, Cw20ExecuteMsg, Cw20QueryMsg};
     use cw20_base::contract::{
         execute as cw20_execute, instantiate as cw20_instantiate, query as cw20_query,
@@ -316,6 +316,11 @@ mod tests {
                 },
                 Trait {
                     display_type: None,
+                    trait_type: "contract_exploited".to_string(),
+                    value: cw20_addr.to_string(),
+                },
+                Trait {
+                    display_type: None,
                     trait_type: "total_amount_hacked".to_string(),
                     value: 900_000u128.to_string(),
                 },
@@ -353,6 +358,7 @@ mod tests {
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
+
         assert_eq!(subscriptions.len(), 2);
         assert_eq!(subscriptions[0].subscriber, subscriber.to_string());
         assert_eq!(subscriptions[0].bounty_pct, 20);
@@ -399,7 +405,43 @@ mod tests {
             &execute_msg,
             &[],
         );
-        println!("{:?}", err);
         assert!(err.is_err());
+
+        // move block time forward to create another hack unique entry (Addr, timestamp)
+        app.set_block(BlockInfo {
+            height: 12345 + 1,
+            time: Timestamp::from_seconds(1_571_797_419 + 1_000),
+            chain_id: "terra".to_string(),
+        });
+
+        // Hacker transfers the stolen tokens to the main contract for a second hack to subscriber2
+        let send_msg = to_binary(&ReceiveMsg::DepositCw20 {
+            subscriber: subscriber2.to_string(),
+        })
+        .unwrap();
+        let msg = Cw20ExecuteMsg::Send {
+            contract: main_contract_addr.to_string(),
+            amount: Uint128::from(100_000u128),
+            msg: send_msg.clone(),
+        };
+        app.execute_contract(hacker.clone(), cw20_addr.clone(), &msg, &[])
+            .unwrap();
+
+        // get hacks of subscriber2
+        let query_msg = QueryMsg::Hacks {};
+        let hacks: Vec<HacksResponse> = app
+            .wrap()
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(hacks.len(), 2);
+        assert_eq!(hacks[0].date, app.block_info().time.seconds() - 1000);
+        assert_eq!(hacks[0].contract_exploited, cw20_addr.to_string());
+        assert_eq!(hacks[0].total_amount_hacked.u128(), 900_000u128);
+        assert_eq!(hacks[0].bounty.u128(), 180_000u128);
+        assert_eq!(hacks[0].hacker_addr, HACKER.to_string());
+        assert_eq!(hacks[1].contract_exploited, cw20_addr.to_string());
+        assert_eq!(hacks[1].total_amount_hacked.u128(), 100_000u128);
+        assert_eq!(hacks[1].bounty.u128(), 50_000u128);
+        assert_eq!(hacks[1].hacker_addr, HACKER.to_string());
     }
 }

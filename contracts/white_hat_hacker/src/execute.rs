@@ -7,6 +7,7 @@ use cw721::NumTokensResponse;
 use cw721_metadata_onchain::{Extension, Metadata, MintMsg, Trait};
 
 use crate::msg::ReceiveMsg;
+use crate::state::{Hacks, HACKS};
 use crate::{
     state::{Config, Subscriptions, CONFIG, SUBSCRIPTIONS},
     ContractError,
@@ -128,6 +129,11 @@ pub fn deposit_cw20(
         },
         Trait {
             display_type: None,
+            trait_type: "contract_exploited".to_string(),
+            value: cw20_addr.to_string(),
+        },
+        Trait {
+            display_type: None,
             trait_type: "total_amount_hacked".to_string(),
             value: amount.to_string(),
         },
@@ -168,6 +174,18 @@ pub fn deposit_cw20(
         }))?,
         funds: vec![],
     }));
+
+    // update hack details and save them in storage
+    let hacks = Hacks {
+        date: env.block.time.seconds(),
+        contract_exploited: cw20_addr,
+        total_amount_hacked: amount,
+        bounty: bounty.into(),
+        hacker_addr: hacker_addr.clone(),
+    };
+    HACKS.save(deps.storage, (hacker_addr, hacks.date), &hacks)?;
+    println!("### HACK DETAILS SAVED ###");
+    println!("### hacks: {:?}", hacks);
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")

@@ -19,20 +19,13 @@ pub struct Subscriptions {
 }
 
 #[cw_serde]
-pub struct Hacker {
-    pub balance: u128,
-    pub amount_hacked: u128,
-    pub bounty_received: u128,
-}
-
-#[cw_serde]
-#[derive(Default)]
-pub struct Metadata {
-    pub date_time: Option<String>,
-    pub hacked_amount: Option<Uint128>,
-    pub bounty_received: Option<Uint128>,
-    pub hacker: Option<String>,
+pub struct Hacks {
+    pub date: u64,
+    pub contract_exploited: Addr,
+    pub total_amount_hacked: Uint128,
+    pub bounty: Uint128,
+    pub hacker_addr: Addr,
 }
 
 pub const SUBSCRIPTIONS: Map<Addr, Subscriptions> = Map::new("conditions");
-pub const BALANCES: Map<(Addr, Addr), Hacker> = Map::new("balances");
+pub const HACKS: Map<(Addr, u64), Hacks> = Map::new("hacks");

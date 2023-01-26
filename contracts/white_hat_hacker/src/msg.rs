@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 #[cw_serde]
@@ -48,6 +48,8 @@ pub enum QueryMsg {
     Subscription { protected_addr: String },
     #[returns(SubscriptionsResponse)]
     Subscriptions {},
+    #[returns(HacksResponse)]
+    Hacks {},
 }
 
 #[cw_serde]
@@ -68,6 +70,15 @@ pub struct SubscriptionsResponse {
     pub subscriber: Addr,
     pub bounty_pct: u16,
     pub min_bounty: Option<u128>,
+}
+
+#[cw_serde]
+pub struct HacksResponse {
+    pub date: u64,
+    pub contract_exploited: Addr,
+    pub total_amount_hacked: Uint128,
+    pub bounty: Uint128,
+    pub hacker_addr: Addr,
 }
 
 #[cw_serde]

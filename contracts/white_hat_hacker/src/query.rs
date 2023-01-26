@@ -1,7 +1,7 @@
 use cosmwasm_std::{Deps, Order, StdResult};
 
-use crate::msg::{ConfigResponse, SubscriptionResponse, SubscriptionsResponse};
-use crate::state::{CONFIG, SUBSCRIPTIONS};
+use crate::msg::{ConfigResponse, HacksResponse, SubscriptionResponse, SubscriptionsResponse};
+use crate::state::{CONFIG, HACKS, SUBSCRIPTIONS};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let cfg = CONFIG.load(deps.storage)?;
@@ -37,4 +37,22 @@ pub fn subscriptions(deps: Deps) -> StdResult<Vec<SubscriptionsResponse>> {
         .collect::<StdResult<Vec<SubscriptionsResponse>>>()?;
 
     Ok(subscriptions)
+}
+
+pub fn hacks(deps: Deps) -> StdResult<Vec<HacksResponse>> {
+    let hacks = HACKS
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| {
+            let (_, hacks) = item?;
+            Ok(HacksResponse {
+                date: hacks.date,
+                contract_exploited: hacks.contract_exploited,
+                total_amount_hacked: hacks.total_amount_hacked,
+                bounty: hacks.bounty,
+                hacker_addr: hacks.hacker_addr,
+            })
+        })
+        .collect::<StdResult<Vec<HacksResponse>>>()?;
+
+    Ok(hacks)
 }

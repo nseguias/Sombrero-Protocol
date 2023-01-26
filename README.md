@@ -1,66 +1,28 @@
-# CosmWasm Starter Pack
+# White Hat Hacker NFT
 
-This is a template to build smart contracts in Rust to run inside a
-[Cosmos SDK](https://github.com/cosmos/cosmos-sdk) module on all chains that enable it.
-To understand the framework better, please read the overview in the
-[cosmwasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [cosmwasm docs](https://www.cosmwasm.com).
-This assumes you understand the theory and just want to get coding.
+The White Hat Hacker NFT is an open-source, descentralized, and automatic bounty marketplace for the Cosmos ecosystem, allowing hackers to search for subscribed contracts that could be exploited in exchange for a reward.
 
-## Creating a new repo from template
+The concept behind this smart contract is that it creates a win-win scenario for all parties involved. Hackers are able to earn a reward for their efforts without facing legal repercussions, subscribed contracts are able to recover most of their funds, and overall, smart contracts in the ecosystem become more secure.
 
-Assuming you have a recent version of rust and cargo (v1.58.1+) installed
-(via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+To participate in the bounty marketplace, contracts must subscribe to the protocol and set their bounty conditions upfront. These conditions include the address of the smart contract to be protected, the percentage of the total hacked amount that hackers will keep as a reward, and a minimum amount for small hack attempts.
 
-Install [cargo-generate](https://github.com/ashleygwilliams/cargo-generate) and cargo-run-script.
-Unless you did that before, run this line now:
+The `Subscribe` message contains the following fields:
 
-```sh
-cargo install cargo-generate --features vendored-openssl
-cargo install cargo-run-script
-```
+    protected_contract: String
+    bounty_pct: u16
+    min_bounty: Option<u128>
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+All bounty conditions are recorded on-chain in the smart contract, eliminating the need for negotiations or personal information sharing.
 
-**Latest**
+Once a hacker successfully exploits a protected contract and sends the stolen funds to the White Hat Hacker NFT smart contract, the reward is automatically paid to the hacker, the subscribed contract receives the remaining tokens, and a fee is collected by the protocol which can be withdrawn later by the contract administrator.
 
-```sh
-cargo generate --git https://github.com/nseguias/Boilerplate.git --name PROJECT_NAME
-```
+As a proof of their achievement, hackers will receive a freshly minted NFT that records the hack conditions on chain. This NFT can be kept as a badge of honor to showcase the hacker's skills and contributions to the ecosystem's security.
 
-You will now have a new folder called `PROJECT_NAME` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
+The NFT metadata will live onchain and contains the following traits:
 
-## Create a Repo
+    date: String,
+    contract_exploited: String,
+    total_amount_hacked: String,
+    bounty: String,
+    hacker_addr: String,
 
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
-
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git branch -M main
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin main
-```
-
-## Using your project
-
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[online tutorial](https://docs.cosmwasm.com/) to get a better feel
-of how to develop.
-
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
-
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful referenced, but please set some
-proper description in the README.
