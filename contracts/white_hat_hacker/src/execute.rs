@@ -42,8 +42,17 @@ pub fn subscribe(
         .add_attribute("min_bounty", min_bounty.unwrap_or(0u128).to_string()))
 }
 
-pub fn unsubscribe(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn unsubscribe(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    subscriber: String,
+) -> Result<Response, ContractError> {
     // sender will be removed from subscriptions (if exists)
+    let subscription = SUBSCRIPTIONS.load(deps.storage, deps.api.addr_validate(&subscriber)?)?;
+    if info.sender != subscription.subscriber {
+        return Err(ContractError::Unauthorized {});
+    }
     SUBSCRIPTIONS.remove(deps.storage, info.sender.clone());
     Ok(Response::new()
         .add_attribute("action", "unsubscribe")
@@ -214,7 +223,10 @@ pub fn update_subscription(
     }
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
 
-    if new_bounty_pct.is_none() && new_min_bounty == subscriptions.min_bounty {
+    if new_bounty_pct.is_none() && new_min_bounty == subscriptions.min_bounty
+        || new_min_bounty.is_none() && new_bounty_pct == Some(subscriptions.bounty_pct)
+        || new_bounty_pct.is_none() && new_min_bounty.is_none()
+    {
         return Err(ContractError::NothingToUpdate {});
     }
 

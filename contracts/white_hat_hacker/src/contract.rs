@@ -60,7 +60,7 @@ pub fn execute(
             new_bounty_pct,
             new_min_bounty,
         ),
-        ExecuteMsg::Unsubscribe {} => execute::unsubscribe(deps, env, info),
+        ExecuteMsg::Unsubscribe { subscriber } => execute::unsubscribe(deps, env, info, subscriber),
         ExecuteMsg::Receive(cw20_msg) => execute::handle_receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Withdraw {
             cw20_addr,

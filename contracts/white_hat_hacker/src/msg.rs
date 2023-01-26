@@ -28,7 +28,9 @@ pub enum ExecuteMsg {
         new_bounty_pct: Option<u16>,
         new_min_bounty: Option<u128>,
     },
-    Unsubscribe {},
+    Unsubscribe {
+        subscriber: String,
+    },
     Receive(Cw20ReceiveMsg),
     Withdraw {
         cw20_addr: String,

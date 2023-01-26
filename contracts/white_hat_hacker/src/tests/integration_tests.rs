@@ -360,7 +360,6 @@ mod tests {
         assert_eq!(subscriptions[1].subscriber, subscriber2.to_string());
         assert_eq!(subscriptions[1].bounty_pct, 50);
         assert_eq!(subscriptions[1].min_bounty, Some(1_000_000u128));
-        println!("subscriptions: {:?}", subscriptions);
 
         // trying to update subscription of subscriber2 as subscriber should fail
         let execute_msg = ExecuteMsg::UpdateSubscription {
@@ -374,6 +373,33 @@ mod tests {
             &execute_msg,
             &[],
         );
+        assert!(err.is_err());
+
+        // trying to update subscription with None values should fail
+        let execute_msg = ExecuteMsg::UpdateSubscription {
+            subscriber: subscriber2.to_string(),
+            new_bounty_pct: None,
+            new_min_bounty: None,
+        };
+        let err = app.execute_contract(
+            subscriber2.clone(),
+            main_contract_addr.clone(),
+            &execute_msg,
+            &[],
+        );
+        assert!(err.is_err());
+
+        // trying to unsubscribe with non-subscriber address should fail
+        let execute_msg = ExecuteMsg::Unsubscribe {
+            subscriber: subscriber.to_string(),
+        };
+        let err = app.execute_contract(
+            Addr::unchecked("not_subscribed").clone(),
+            main_contract_addr.clone(),
+            &execute_msg,
+            &[],
+        );
+        println!("{:?}", err);
         assert!(err.is_err());
     }
 }
