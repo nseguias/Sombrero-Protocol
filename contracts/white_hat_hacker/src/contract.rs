@@ -48,6 +48,18 @@ pub fn execute(
             bounty_pct,
             min_bounty,
         } => execute::subscribe(deps, env, info, subscriber, bounty_pct, min_bounty),
+        ExecuteMsg::UpdateSubscription {
+            subscriber,
+            new_bounty_pct,
+            new_min_bounty,
+        } => execute::update_subscription(
+            deps,
+            env,
+            info,
+            subscriber,
+            new_bounty_pct,
+            new_min_bounty,
+        ),
         ExecuteMsg::Unsubscribe {} => execute::unsubscribe(deps, env, info),
         ExecuteMsg::Receive(cw20_msg) => execute::handle_receive_cw20(deps, env, info, cw20_msg),
         ExecuteMsg::Withdraw {

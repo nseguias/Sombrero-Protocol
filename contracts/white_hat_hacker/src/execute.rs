@@ -205,9 +205,13 @@ pub fn update_subscription(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    subscriber: String,
     new_bounty_pct: Option<u16>,
     new_min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
+    if info.sender != deps.api.addr_validate(&subscriber)? {
+        return Err(ContractError::Unauthorized {});
+    }
     let subscriptions = SUBSCRIPTIONS.load(deps.storage, info.sender.clone())?;
 
     if new_bounty_pct.is_none() && new_min_bounty == subscriptions.min_bounty {

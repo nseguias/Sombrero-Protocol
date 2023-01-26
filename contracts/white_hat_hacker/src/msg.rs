@@ -23,6 +23,11 @@ pub enum ExecuteMsg {
         bounty_pct: u16,
         min_bounty: Option<u128>,
     },
+    UpdateSubscription {
+        subscriber: String,
+        new_bounty_pct: Option<u16>,
+        new_min_bounty: Option<u128>,
+    },
     Unsubscribe {},
     Receive(Cw20ReceiveMsg),
     Withdraw {

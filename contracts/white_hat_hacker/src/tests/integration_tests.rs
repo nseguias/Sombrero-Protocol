@@ -7,6 +7,7 @@ mod tests {
         },
         msg::{
             ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, SubscriberResponse,
+            SubscriptionsResponse,
         },
     };
     use cosmwasm_std::{to_binary, Addr, Empty, Uint128};
@@ -330,5 +331,49 @@ mod tests {
                 },
             ])
         );
+
+        // subscribe another address to the contract
+        let subscriber2 = Addr::unchecked("subscriber2");
+        let execute_msg = ExecuteMsg::Subscribe {
+            subscriber: subscriber2.clone(),
+            bounty_pct: 50,
+            min_bounty: Some(1_000_000u128),
+        };
+        app.execute_contract(
+            subscriber2.clone(),
+            main_contract_addr.clone(),
+            &execute_msg,
+            &[],
+        )
+        .unwrap();
+
+        // query subscriptions
+        let query_msg = QueryMsg::Subscriptions {};
+        let subscriptions: Vec<SubscriptionsResponse> = app
+            .wrap()
+            .query_wasm_smart(main_contract_addr.clone(), &query_msg)
+            .unwrap();
+        assert_eq!(subscriptions.len(), 2);
+        assert_eq!(subscriptions[0].subscriber, subscriber.to_string());
+        assert_eq!(subscriptions[0].bounty_pct, 20);
+        assert_eq!(subscriptions[0].min_bounty, None);
+        assert_eq!(subscriptions[1].subscriber, subscriber2.to_string());
+        assert_eq!(subscriptions[1].bounty_pct, 50);
+        assert_eq!(subscriptions[1].min_bounty, Some(1_000_000u128));
+        println!("subscriptions: {:?}", subscriptions);
+
+        // trying to update subscription of subscriber2 as subscriber should fail
+        let execute_msg = ExecuteMsg::UpdateSubscription {
+            subscriber: subscriber2.to_string(),
+            new_bounty_pct: Some(10),
+            new_min_bounty: Some(100_000u128),
+        };
+        let err = app.execute_contract(
+            subscriber.clone(),
+            main_contract_addr.clone(),
+            &execute_msg,
+            &[],
+        );
+        assert!(err.is_err());
     }
 }
