@@ -25,11 +25,12 @@ pub enum ContractError {
     #[error("Protocol fee must be smaller than or equal to 100%")]
     InvalidProtocolFee {},
 
+    #[error("Overflow")]
+    Overflow {},
+
+    #[error("Underflow")]
+    Underflow {},
+
     #[error("Nothing to withdraw")]
     NothingToWithdraw {},
-    // Add any other custom errors you like here.
-    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
-    //
-    #[error("Custom Error val: {val:?}")]
-    CustomError { val: String },
 }

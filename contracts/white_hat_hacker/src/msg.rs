@@ -8,7 +8,7 @@ use cw20::Cw20ReceiveMsg;
 ///
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub protocol_fee: u16,
+    pub protocol_fee: u128,
     pub cw721_code_id: u64,
     pub cw721_name: String,
     pub cw721_symbol: String,
@@ -23,13 +23,13 @@ pub enum ExecuteMsg {
     ///
     UpdateConfig {
         new_contract_owner: Option<String>,
-        new_bounty_pct: Option<u16>,
+        new_bounty_pct: Option<u128>,
     },
     /// Subscribe is the struct to subscribe to a protected contract and set the bounty details
     ///
     Subscribe {
         subscriber: String,
-        bounty_pct: u16,
+        bounty_pct: u128,
         min_bounty: Option<u128>,
     },
     /// UpdateSubscription is the struct to update the bounty details for a subscription.
@@ -37,7 +37,7 @@ pub enum ExecuteMsg {
     ///
     UpdateSubscription {
         subscriber: String,
-        new_bounty_pct: Option<u16>,
+        new_bounty_pct: Option<u128>,
         new_min_bounty: Option<u128>,
     },
     /// Unsubscribe is the struct to unsubscribe a protected contract and remove the bounty details.
@@ -85,20 +85,20 @@ pub enum QueryMsg {
 #[cw_serde]
 pub struct ConfigResponse {
     pub contract_owner: Addr,
-    pub protocol_fee: u16,
+    pub protocol_fee: u128,
     pub cw721_addr: Addr,
 }
 
 #[cw_serde]
 pub struct SubscriptionResponse {
-    pub bounty_pct: u16,
+    pub bounty_pct: u128,
     pub min_bounty: Option<u128>,
 }
 
 #[cw_serde]
 pub struct SubscriptionsResponse {
     pub subscriber: Addr,
-    pub bounty_pct: u16,
+    pub bounty_pct: u128,
     pub min_bounty: Option<u128>,
 }
 

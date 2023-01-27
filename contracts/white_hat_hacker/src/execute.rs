@@ -26,7 +26,7 @@ pub fn subscribe(
     _env: Env,
     _info: MessageInfo,
     subscriber: String,
-    bounty_pct: u16,
+    bounty_pct: u128,
     min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     if bounty_pct > 100 {
@@ -79,6 +79,8 @@ pub fn handle_receive_cw20(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     // validate that cw20 contract is sending this message
+    //
+
     let hacker_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let cw20_addr = info.sender.clone();
     let msg: ReceiveMsg = from_binary(&cw20_msg.msg)?;
@@ -109,8 +111,12 @@ pub fn deposit_cw20(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     let subscriber = deps.api.addr_validate(&subscriber)?;
-    let subscriptions = SUBSCRIPTIONS.load(deps.storage, subscriber.clone())?;
-    let bounty = subscriptions.bounty_pct as u128 * amount.u128() / 100;
+    let subscription = SUBSCRIPTIONS.load(deps.storage, subscriber.clone())?;
+    let bounty = subscription
+        .bounty_pct
+        .checked_mul(amount.u128())
+        .ok_or(ContractError::Overflow {})?
+        / 100;
     let cfg = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
     let config = CONFIG.load(deps.storage)?;
@@ -130,9 +136,20 @@ pub fn deposit_cw20(
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw20_addr.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: subscriptions.subscriber.to_string(),
-            amount: (amount.u128() - bounty - amount.u128() * cfg.protocol_fee as u128 / 100)
-                .into(),
+            recipient: subscription.subscriber.to_string(),
+            amount: (amount
+                .u128()
+                .checked_sub(bounty)
+                .ok_or(ContractError::Underflow {})?
+                .checked_sub(
+                    amount
+                        .u128()
+                        .checked_mul(cfg.protocol_fee)
+                        .ok_or(ContractError::Overflow {})?
+                        / 100,
+                )
+                .ok_or(ContractError::Underflow {})?)
+            .into(),
         })?,
         funds: vec![],
     }));
@@ -184,7 +201,11 @@ pub fn deposit_cw20(
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: cw721_addr.to_string(),
         msg: to_binary(&Cw721ExecuteMsg::Mint(MintMsg::<Extension> {
-            token_id: (num_tokens.count + 1).to_string(),
+            token_id: (num_tokens
+                .count
+                .checked_add(1)
+                .ok_or(ContractError::Overflow {}))?
+            .to_string(),
             owner: hacker_addr.to_string(),
             token_uri: None,
             extension: Some(metadata),
@@ -201,8 +222,6 @@ pub fn deposit_cw20(
         hacker_addr: hacker_addr.clone(),
     };
     HACKS.save(deps.storage, (hacker_addr, hacks.date), &hacks)?;
-    println!("### HACK DETAILS SAVED ###");
-    println!("### hacks: {:?}", hacks);
 
     Ok(Response::new()
         .add_attribute("action", "deposit_cw20")
@@ -257,7 +276,7 @@ pub fn update_subscription(
     _env: Env,
     info: MessageInfo,
     subscriber: String,
-    new_bounty_pct: Option<u16>,
+    new_bounty_pct: Option<u128>,
     new_min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     if info.sender != deps.api.addr_validate(&subscriber)? {
@@ -295,7 +314,7 @@ pub fn update_config(
     _env: Env,
     info: MessageInfo,
     new_contract_owner: Option<String>,
-    new_protocol_fee: Option<u16>,
+    new_protocol_fee: Option<u128>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
