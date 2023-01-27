@@ -25,24 +25,26 @@ pub fn subscribe(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    subscriber: Addr,
+    subscriber: String,
     bounty_pct: u16,
     min_bounty: Option<u128>,
 ) -> Result<Response, ContractError> {
     if bounty_pct > 100 {
         return Err(ContractError::InvalidBountyPercentage {});
     }
+    //validate that subscriber is a valid address
+    let valid_subscriber = deps.api.addr_validate(&subscriber)?;
     // save subscription details on state
     let subscriptions = Subscriptions {
-        subscriber: subscriber.clone(),
+        subscriber: valid_subscriber.clone(),
         bounty_pct,
         min_bounty,
     };
-    SUBSCRIPTIONS.save(deps.storage, subscriber.clone(), &subscriptions)?;
+    SUBSCRIPTIONS.save(deps.storage, valid_subscriber.clone(), &subscriptions)?;
 
     Ok(Response::new()
         .add_attribute("action", "subscribe")
-        .add_attribute("subscriber", subscriber)
+        .add_attribute("subscriber", valid_subscriber)
         .add_attribute("bounty_pct", bounty_pct.to_string())
         .add_attribute("min_bounty", min_bounty.unwrap_or(0u128).to_string()))
 }

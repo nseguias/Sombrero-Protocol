@@ -127,7 +127,7 @@ mod tests {
 
         // dao subscribes to the contract
         let execute_msg = ExecuteMsg::Subscribe {
-            subscriber: subscriber.clone(),
+            subscriber: subscriber.to_string(),
             bounty_pct: 20,
             min_bounty: None,
         };
@@ -340,7 +340,7 @@ mod tests {
         // subscribe another address to the contract
         let subscriber2 = Addr::unchecked("subscriber2");
         let execute_msg = ExecuteMsg::Subscribe {
-            subscriber: subscriber2.clone(),
+            subscriber: subscriber2.to_string(),
             bounty_pct: 50,
             min_bounty: Some(1_000_000u128),
         };

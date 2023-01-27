@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
     /// Subscribe is the struct to subscribe to a protected contract and set the bounty details
     ///
     Subscribe {
-        subscriber: Addr,
+        subscriber: String,
         bounty_pct: u16,
         min_bounty: Option<u128>,
     },

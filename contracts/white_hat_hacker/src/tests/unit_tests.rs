@@ -7,7 +7,6 @@ mod tests {
     use cosmwasm_std::{
         attr, coin, from_binary,
         testing::{mock_dependencies, mock_env, mock_info},
-        Addr,
     };
 
     pub const OWNER: &str = "owner";
@@ -56,7 +55,7 @@ mod tests {
         instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
         let execute_msg = ExecuteMsg::Subscribe {
-            subscriber: Addr::unchecked(USER),
+            subscriber: USER.to_string(),
             bounty_pct: 20,
             min_bounty: None,
         };
