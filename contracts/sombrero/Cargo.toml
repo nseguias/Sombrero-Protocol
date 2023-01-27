@@ -1,10 +1,10 @@
 [package]
-name          = "white_hat_hacker"
+name          = "sombrero"
 version = "0.0.0"
 authors       = ["Nahem Seguias <nahemseguias@gmail.com>"]
-description   = "White Hat Hacker NFT contract"
+description   = "Sombrero Protocol"
 edition = "2021"
-repository    = "https://github.com/nseguias/WhiteHatHacker"
+repository    = "https://github.com/nseguias/Sombrero-Protocol"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

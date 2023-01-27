@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/white_hat_hacker"]
+members = ["contracts/sombrero"]
 
 [profile.release]
 codegen-units = 1

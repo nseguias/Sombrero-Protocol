@@ -849,6 +849,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "sombrero"
+version = "0.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw-storage-plus 1.0.1",
+ "cw-utils 1.0.1",
+ "cw2 1.0.0",
+ "cw20",
+ "cw20-base",
+ "cw721 0.16.0",
+ "cw721-metadata-onchain",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "spki"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -936,25 +955,6 @@ name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
-
-[[package]]
-name = "white_hat_hacker"
-version = "0.0.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-multi-test",
- "cw-storage-plus 1.0.1",
- "cw-utils 1.0.1",
- "cw2 1.0.0",
- "cw20",
- "cw20-base",
- "cw721 0.16.0",
- "cw721-metadata-onchain",
- "schemars",
- "serde",
- "thiserror",
-]
 
 [[package]]
 name = "zeroize"
