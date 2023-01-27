@@ -23,23 +23,32 @@ As a proof of their achievement, hackers will receive a freshly minted NFT that 
 
 The NFT metadata will live on-chain and contains the following traits:
 
-    Date,
-    Contract exploited,
+    Date of the hack,
+    Address of the exploited contract,
     Total amount hacked,
-    Bounty colelcted,
+    Bounty collected,
     Hacker address,
 
-## Sombrero contract
+## Testnet deployment
 
-    store_code_hash: F35143314D06425E3859D076304D9AA6429D6354CBFAB2CF72EFDAC6BEC66345
-    code_id: 7245
+    blockchain:         Pisco-1 testnet for Terra 2.0
+    deployer:           terra12e98lr4kl86g48y394fxt9ygacnhvtmpwtj4qe
 
-## Cw721-metadata-onchain contract
+### Sombrero contract
+
+    store_code_hash:    B1CD59C54A16F42B7DD9FF3D552E01145D271FE439BAFBABC9973A365B192C0D
+    code_id:            7261
+    instantiate_has:    3416C1469E35448463A2DED55F0B6C9F921824DCF792E04270F3BF9A13888617
+    contract_addr:      terra12w4hwnd8xlakg2t4l7v2t0490v74q2ev09rd0j9k4022gqs4auys8s8z9y
+
+### Cw721-metadata-onchain contract
 
     store_code_hash:    AC89F3D0A0B04F915607FD58D8EB3D11352629179B61C0F941C93465CF2A181A
     code_id:            7248
+    instantiate_hash:   3416C1469E35448463A2DED55F0B6C9F921824DCF792E04270F3BF9A13888617
+    cw721_addr:         terra19jaz3emha88rnq6jtz0lzjal9rluvtkmmusk8wcn07j0kw3dprdsvq0se8
 
-## Cw20-base contract
+### Cw20-base contract
 
     store_code_hash:    70AFF93A205F7BE50AABB4CBFC0C1535F726B5167D3B1D001C44FC0DA972CB86
     code_id:            7249
