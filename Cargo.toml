@@ -25,6 +25,5 @@ cw-storage-plus         = "1.0.1"
 schemars                = "0.8.10"
 serde                   = { version = "1.0.140", default-features = false, features = ["derive"] }
 thiserror               = "1.0.37"
-cw-multi-test           = "0.16.2"
 getrandom = { version = "0.2", features = ["js"] }
-
+cw-multi-test           = "0.16.2"

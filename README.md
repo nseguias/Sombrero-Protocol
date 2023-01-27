@@ -28,3 +28,18 @@ The NFT metadata will live on-chain and contains the following traits:
     Total amount hacked,
     Bounty colelcted,
     Hacker address,
+
+## Sombrero contract
+
+    store_code_hash: F35143314D06425E3859D076304D9AA6429D6354CBFAB2CF72EFDAC6BEC66345
+    code_id: 7245
+
+## Cw721-metadata-onchain contract
+
+    store_code_hash: AC89F3D0A0B04F915607FD58D8EB3D11352629179B61C0F941C93465CF2A181A
+    code_id: 7248
+
+## Cw20-base contract
+
+    store_code_hash: 70AFF93A205F7BE50AABB4CBFC0C1535F726B5167D3B1D001C44FC0DA972CB86
+    code_id: 7249

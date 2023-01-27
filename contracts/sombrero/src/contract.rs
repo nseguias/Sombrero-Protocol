@@ -1,17 +1,16 @@
+use crate::error::ContractError;
+use crate::instantiate::handle_cw721_instantiate_reply;
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::{execute, instantiate, query};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 
-use crate::error::ContractError;
-use crate::instantiate::handle_cw721_instantiate_reply;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::{execute, instantiate, query};
-
-const CONTRACT_NAME: &str = "crates.io:white-hat-hacker";
+const CONTRACT_NAME: &str = "crates.io:sombrero";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const INSTANTIATE_CW721_REPLY_ID: u64 = 2;
+const INSTANTIATE_CW721_REPLY_ID: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
