@@ -29,3 +29,4 @@ schemars                = { workspace = true }
 serde                   = { workspace = true }
 thiserror               = { workspace = true }
 cw-multi-test           = { workspace = true }
+getrandom               = { workspace = true }
