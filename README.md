@@ -36,10 +36,12 @@ The NFT metadata will live on-chain and contains the following traits:
 
 ## Cw721-metadata-onchain contract
 
-    store_code_hash: AC89F3D0A0B04F915607FD58D8EB3D11352629179B61C0F941C93465CF2A181A
-    code_id: 7248
+    store_code_hash:    AC89F3D0A0B04F915607FD58D8EB3D11352629179B61C0F941C93465CF2A181A
+    code_id:            7248
 
 ## Cw20-base contract
 
-    store_code_hash: 70AFF93A205F7BE50AABB4CBFC0C1535F726B5167D3B1D001C44FC0DA972CB86
-    code_id: 7249
+    store_code_hash:    70AFF93A205F7BE50AABB4CBFC0C1535F726B5167D3B1D001C44FC0DA972CB86
+    code_id:            7249
+    instantiate_hash:   466497C9B072A8C48BFEDE1ABE4C6557389F0C81D55DF08A63784660CBD047F1
+    cw20_addr:          terra1k0wj8tev6s5gh3kts3t7pch9mzruuynqzcgmh75xgkst40e0t7ss4q87w8

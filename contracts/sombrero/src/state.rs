@@ -5,15 +5,15 @@ use cw_storage_plus::{Item, Map};
 #[cw_serde]
 pub struct Config {
     pub contract_owner: Addr,
-    pub protocol_fee: u128,
+    pub protocol_fee: Uint128,
     pub cw721_addr: Addr,
 }
 
 #[cw_serde]
 pub struct Subscriptions {
     pub subscriber: Addr,
-    pub bounty_pct: u128,
-    pub min_bounty: Option<u128>,
+    pub bounty_pct: Uint128,
+    pub min_bounty: Option<Uint128>,
 }
 
 #[cw_serde]

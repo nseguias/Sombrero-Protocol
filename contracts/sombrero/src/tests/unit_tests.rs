@@ -7,6 +7,7 @@ mod tests {
     use cosmwasm_std::{
         attr, coin, from_binary,
         testing::{mock_dependencies, mock_env, mock_info},
+        Uint128,
     };
 
     pub const OWNER: &str = "owner";
@@ -20,7 +21,7 @@ mod tests {
         let env = mock_env();
         let info = mock_info(OWNER, &[coin(100, DENOM)]);
         let msg = InstantiateMsg {
-            protocol_fee: 0,
+            protocol_fee: Uint128::zero(),
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),
@@ -45,7 +46,7 @@ mod tests {
         let env = mock_env();
         let info = mock_info(OWNER, &[coin(1_000_000, DENOM)]);
         let msg = InstantiateMsg {
-            protocol_fee: 0,
+            protocol_fee: Uint128::zero(),
             cw721_code_id: INSTANTIATE_CW721_REPLY_ID,
             cw721_name: "NAME".to_string(),
             cw721_symbol: "SYMBOL".to_string(),
@@ -56,7 +57,7 @@ mod tests {
 
         let execute_msg = ExecuteMsg::Subscribe {
             subscriber: USER.to_string(),
-            bounty_pct: 20,
+            bounty_pct: Uint128::from(20u128),
             min_bounty: None,
         };
 

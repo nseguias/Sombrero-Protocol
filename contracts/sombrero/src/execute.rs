@@ -26,10 +26,10 @@ pub fn subscribe(
     _env: Env,
     _info: MessageInfo,
     subscriber: String,
-    bounty_pct: u128,
-    min_bounty: Option<u128>,
+    bounty_pct: Uint128,
+    min_bounty: Option<Uint128>,
 ) -> Result<Response, ContractError> {
-    if bounty_pct > 100 {
+    if bounty_pct > Uint128::from(100u128) {
         return Err(ContractError::InvalidBountyPercentage {});
     }
     //validate that subscriber is a valid address
@@ -46,7 +46,10 @@ pub fn subscribe(
         .add_attribute("action", "subscribe")
         .add_attribute("subscriber", valid_subscriber)
         .add_attribute("bounty_pct", bounty_pct.to_string())
-        .add_attribute("min_bounty", min_bounty.unwrap_or(0u128).to_string()))
+        .add_attribute(
+            "min_bounty",
+            min_bounty.unwrap_or(Uint128::zero()).to_string(),
+        ))
 }
 
 /// smart contract owners can unsubscribe their contracts from the protocol to stop participating in the bounty program
@@ -112,11 +115,14 @@ pub fn deposit_cw20(
 ) -> Result<Response, ContractError> {
     let subscriber = deps.api.addr_validate(&subscriber)?;
     let subscription = SUBSCRIPTIONS.load(deps.storage, subscriber.clone())?;
-    let bounty = subscription
-        .bounty_pct
-        .checked_mul(amount.u128())
-        .ok_or(ContractError::Overflow {})?
-        / 100;
+    let bounty: Uint128 = Uint128::from(
+        subscription
+            .bounty_pct
+            .u128()
+            .checked_mul(amount.u128())
+            .ok_or(ContractError::Overflow {})?
+            / 100u128,
+    );
     let cfg = CONFIG.load(deps.storage)?;
     let mut messages = Vec::new();
     let config = CONFIG.load(deps.storage)?;
@@ -139,12 +145,12 @@ pub fn deposit_cw20(
             recipient: subscription.subscriber.to_string(),
             amount: (amount
                 .u128()
-                .checked_sub(bounty)
+                .checked_sub(bounty.u128())
                 .ok_or(ContractError::Underflow {})?
                 .checked_sub(
                     amount
                         .u128()
-                        .checked_mul(cfg.protocol_fee)
+                        .checked_mul(cfg.protocol_fee.u128())
                         .ok_or(ContractError::Overflow {})?
                         / 100,
                 )
@@ -236,14 +242,14 @@ pub fn withdraw(
     _env: Env,
     info: MessageInfo,
     cw20_addr: String,
-    amount: u128,
+    amount: Uint128,
     recipient: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.contract_owner {
         return Err(ContractError::Unauthorized {});
     }
-    if amount == 0 {
+    if amount.is_zero() {
         return Err(ContractError::NothingToWithdraw {});
     }
     let recipient = deps
@@ -276,8 +282,8 @@ pub fn update_subscription(
     _env: Env,
     info: MessageInfo,
     subscriber: String,
-    new_bounty_pct: Option<u128>,
-    new_min_bounty: Option<u128>,
+    new_bounty_pct: Option<Uint128>,
+    new_min_bounty: Option<Uint128>,
 ) -> Result<Response, ContractError> {
     if info.sender != deps.api.addr_validate(&subscriber)? {
         return Err(ContractError::Unauthorized {});
@@ -291,7 +297,7 @@ pub fn update_subscription(
         return Err(ContractError::NothingToUpdate {});
     }
 
-    if new_bounty_pct > Some(100) {
+    if new_bounty_pct > Some(Uint128::from(100u128)) {
         return Err(ContractError::InvalidBountyPercentage {});
     }
 
@@ -314,7 +320,7 @@ pub fn update_config(
     _env: Env,
     info: MessageInfo,
     new_contract_owner: Option<String>,
-    new_protocol_fee: Option<u128>,
+    new_protocol_fee: Option<Uint128>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -332,7 +338,7 @@ pub fn update_config(
         return Err(ContractError::NothingToUpdate {});
     }
 
-    if new_protocol_fee > Some(100) {
+    if new_protocol_fee > Some(Uint128::from(100u128)) {
         return Err(ContractError::InvalidProtocolFee {});
     }
 

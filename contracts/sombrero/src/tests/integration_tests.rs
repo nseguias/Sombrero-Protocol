@@ -74,7 +74,7 @@ mod tests {
 
         // instantiate main contract
         let instantiate_msg = InstantiateMsg {
-            protocol_fee: 0,
+            protocol_fee: Uint128::zero(),
             cw721_code_id: cw721_code_id,
             cw721_name: "White Hat Hacker NFT".to_string(),
             cw721_symbol: "WHH".to_string(),
@@ -123,12 +123,12 @@ mod tests {
             .unwrap();
         assert_eq!(config.contract_owner, "contract_owner");
         assert_eq!(config.cw721_addr, "contract1");
-        assert_eq!(config.protocol_fee, 0);
+        assert_eq!(config.protocol_fee, Uint128::zero());
 
         // dao subscribes to the contract
         let execute_msg = ExecuteMsg::Subscribe {
             subscriber: subscriber.to_string(),
-            bounty_pct: 20,
+            bounty_pct: Uint128::from(20u128),
             min_bounty: None,
         };
         app.execute_contract(
@@ -147,7 +147,7 @@ mod tests {
             .wrap()
             .query_wasm_smart(main_contract_addr.clone(), &query_msg)
             .unwrap();
-        assert_eq!(res.bounty_pct, 20);
+        assert_eq!(res.bounty_pct, Uint128::from(20u128));
         assert_eq!(res.min_bounty, None);
 
         // query balance of the hacker before the hack
@@ -218,7 +218,7 @@ mod tests {
         // let's hack with new protocol fee 10% (we need to update config first)
         let execute_msg = ExecuteMsg::UpdateConfig {
             new_contract_owner: Some("nahem".to_string()),
-            new_bounty_pct: Some(10),
+            new_bounty_pct: Some(Uint128::from(10u128)),
         };
         app.execute_contract(
             contract_owner.clone(),
@@ -237,7 +237,7 @@ mod tests {
 
         assert_eq!(config.contract_owner, "nahem");
         assert_eq!(config.cw721_addr, "contract1");
-        assert_eq!(config.protocol_fee, 10);
+        assert_eq!(config.protocol_fee, Uint128::from(10u128));
 
         // simulate hacker hacking the contract (subscriber sends 0.9 tokens to hacker)
         let execute_msg = Cw20ExecuteMsg::Transfer {
@@ -341,8 +341,8 @@ mod tests {
         let subscriber2 = Addr::unchecked("subscriber2");
         let execute_msg = ExecuteMsg::Subscribe {
             subscriber: subscriber2.to_string(),
-            bounty_pct: 50,
-            min_bounty: Some(1_000_000u128),
+            bounty_pct: Uint128::from(50u128),
+            min_bounty: Some(Uint128::from(1_000_000u128)),
         };
         app.execute_contract(
             subscriber2.clone(),
@@ -360,17 +360,20 @@ mod tests {
             .unwrap();
         assert_eq!(subscriptions.len(), 2);
         assert_eq!(subscriptions[0].subscriber, subscriber.to_string());
-        assert_eq!(subscriptions[0].bounty_pct, 20);
+        assert_eq!(subscriptions[0].bounty_pct, Uint128::from(20u128));
         assert_eq!(subscriptions[0].min_bounty, None);
         assert_eq!(subscriptions[1].subscriber, subscriber2.to_string());
-        assert_eq!(subscriptions[1].bounty_pct, 50);
-        assert_eq!(subscriptions[1].min_bounty, Some(1_000_000u128));
+        assert_eq!(subscriptions[1].bounty_pct, Uint128::from(50u128));
+        assert_eq!(
+            subscriptions[1].min_bounty,
+            Some(Uint128::from(1_000_000u128))
+        );
 
         // trying to update subscription of subscriber2 as subscriber should fail
         let execute_msg = ExecuteMsg::UpdateSubscription {
             subscriber: subscriber2.to_string(),
-            new_bounty_pct: Some(10),
-            new_min_bounty: Some(100_000u128),
+            new_bounty_pct: Some(Uint128::from(10u128)),
+            new_min_bounty: Some(Uint128::from(100_000u128)),
         };
         let err = app.execute_contract(
             subscriber.clone(),

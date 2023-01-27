@@ -4,7 +4,7 @@ use crate::{
     ContractError,
 };
 use cosmwasm_std::{
-    to_binary, Addr, DepsMut, Empty, Env, MessageInfo, Reply, Response, SubMsg, WasmMsg,
+    to_binary, Addr, DepsMut, Empty, Env, MessageInfo, Reply, Response, SubMsg, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw_utils::parse_reply_instantiate_data;
@@ -20,7 +20,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, contract_name, contract_version)?;
 
-    if msg.protocol_fee > 100 {
+    if msg.protocol_fee > Uint128::from(100u128) {
         return Err(ContractError::InvalidProtocolFee {});
     }
 
